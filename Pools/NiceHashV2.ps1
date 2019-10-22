@@ -56,7 +56,7 @@ $Pool_Request.miningAlgorithms | Where-Object {([Double]$_.paying -gt 0.00) -or 
     if ($Pool_Algorithm_Norm -eq "Sia") {$Pool_Algorithm_Norm = "SiaNiceHash"} #temp fix
     if ($Pool_Algorithm_Norm -eq "Decred") {$Pool_Algorithm_Norm = "DecredNiceHash"} #temp fix
 
-    $Pool_Host = "-new.nicehash.com"
+    $Pool_Host = ".nicehash.com"
 
     if (-not $InfoOnly) {
         $Stat = Set-Stat -Name "$($Name)_$($Pool_Algorithm_Norm)_Profit" -Value ([Double]$_.paying / 1e8) -Duration $StatSpan -ChangeDetection $true -Quiet
@@ -95,6 +95,13 @@ $Pool_Request.miningAlgorithms | Where-Object {([Double]$_.paying -gt 0.00) -or 
                         }
                     })
                     EthMode       = if ($Pool_Algorithm_Norm -match "^(Ethash|ProgPow)") {"ethstratumnh"} else {$null}
+                    AlgorithmList = if ($Pool_Algorithm_Norm -match "-") {@($Pool_Algorithm_Norm, ($Pool_Algorithm_Norm -replace '\-.*$'))}else{@($Pool_Algorithm_Norm)}
+                    Name          = $Name
+                    Penalty       = 0
+                    PenaltyFactor = 1
+                    Wallet        = $Wallets.BTC
+                    Worker        = "{workername:$Worker}"
+                    Email         = $Email
                 }
             }
         }

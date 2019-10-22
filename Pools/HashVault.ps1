@@ -30,11 +30,11 @@ $Pools_Data = @(
     [PSCustomObject]@{symbol = "TUBE";  port = 3333; fee = 0.9; rpc = "bittube"} #pool.bittube.hashvault.pro:3333
     [PSCustomObject]@{symbol = "TRTL";  port = 3333; fee = 0.9; rpc = "turtle"} #pool.turtle.hashvault.pro:3333
     [PSCustomObject]@{symbol = "WOW";   port = 3333; fee = 0.9; rpc = "wownero"} #pool.wownero.hashvault.pro:3333
-    [PSCustomObject]@{symbol = "XCASH"; port = 3333; fee = 0.9; rpc = "xtendcash"} #pool.xtendcash.hashvault.pro:3333
+    [PSCustomObject]@{symbol = "XTNC";  port = 3333; fee = 0.9; rpc = "xtendcash"} #pool.xtendcash.hashvault.pro:3333
     [PSCustomObject]@{symbol = "XEQ";   port = 3333; fee = 0.9; rpc = "equilibria"} #pool.equilibria.hashvault.pro:3333
     [PSCustomObject]@{symbol = "XHV";   port = 3333; fee = 0.9; rpc = "haven"} #pool.haven.hashvault.pro:3333
-    #[PSCustomObject]@{symbol = "XLA";   port = 3333; fee = 0.9; rpc = "scala"} #pool.scala.hashvault.pro:3333
     [PSCustomObject]@{symbol = "XMR";   port = 3333; fee = 0.9; rpc = "monero"} #pool.hashvault.pro:3333
+    [PSCustomObject]@{symbol = "XWP";   port = 3333; fee = 0.9; rpc = "swap"} #pool.swap.hashvault.pro:3333
 )
 
 $Pools_Data | Where-Object {$Wallets."$($_.symbol)" -or $InfoOnly} | ForEach-Object {
@@ -119,6 +119,13 @@ $Pools_Data | Where-Object {$Wallets."$($_.symbol)" -or $InfoOnly} | ForEach-Obj
                     Hashrate      = $Stat.HashRate_Live
                     TSL           = $timestamp - $Pool_Request.pool_statistics.lastBlockFoundTime
                     BLK           = $Stat.BlockRate_Average
+                    AlgorithmList = if ($Pool_Algorithm_Norm -match "-") {@($Pool_Algorithm_Norm, ($Pool_Algorithm_Norm -replace '\-.*$'))}else{@($Pool_Algorithm_Norm)}
+                    Name          = $Name
+                    Penalty       = 0
+                    PenaltyFactor = 1
+                    Wallet        = $Pool_Wallet.wallet
+                    Worker        = "{workername:$Worker}"
+                    Email         = $Email
                 }
             }
             $Pool_SSL = $true

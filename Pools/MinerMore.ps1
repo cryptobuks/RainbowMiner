@@ -39,16 +39,16 @@ if (($PoolCoins_Request | Get-Member -MemberType NoteProperty -ErrorAction Ignor
 $Pool_Coins = [PSCustomObject]@{
     HTH  = [PSCustomObject]@{port = 4515; fee = 1.0; rpc="hth";      regions=@("us")}
     MYNT = [PSCustomObject]@{port = 4548; fee = 1.0; rpc="mynt";     regions=@("us")}
+    PEXA = [PSCustomObject]@{port = 4553; fee = 1.0; rpc="pexa";     regions=@("us")}
     PGN  = [PSCustomObject]@{port = 4517; fee = 1.0; rpc="pgn";      regions=@("us")}
     RITO = [PSCustomObject]@{port = 4545; fee = 1.0; rpc="rito";     regions=@("us","eu")}
-    RVN  = [PSCustomObject]@{port = 4501; fee = 1.0; rpc="rvn";      regions=@("us","eu","hk","east.us","west.us","ca")}
-    RVNt = [PSCustomObject]@{port = 4505; fee = 1.0; rpc="rvnt";     regions=@("us")}
+    RVN  = [PSCustomObject]@{port = 4501; fee = 1.0; rpc="rvn";      regions=@("us","eu","hk","east.us","west.us","ca"); algo = "X16rv2"}
+    RVNt = [PSCustomObject]@{port = 4505; fee = 1.0; rpc="rvnt";     regions=@("us"); algo = "X16rv2"}
     SAFE = [PSCustomObject]@{port = 4503; fee = 1.0; rpc="safe";     regions=@("us")}
     STONE= [PSCustomObject]@{port = 4518; fee = 1.0; rpc="pool";     regions=@("us")}
     VDL  = [PSCustomObject]@{port = 4547; fee = 1.0; rpc="vdl";      regions=@("us")}
     XMG  = [PSCustomObject]@{port = 4537; fee = 1.0; rpc="xmg";      regions=@("us")}
     XRD  = [PSCustomObject]@{port = 4552; fee = 1.0; rpc="xrd";      regions=@("us")}
-    XSG  = [PSCustomObject]@{port = 4508; fee = 1.0; rpc="xsg";      regions=@("us")}
     YEC  = [PSCustomObject]@{port = 4550; fee = 1.0; rpc="yec";      regions=@("us")}
     YTN  = [PSCustomObject]@{port = 4543; fee = 1.0; rpc="ytn";      regions=@("us")}
 }
@@ -62,7 +62,7 @@ $PoolCoins_Request | Get-Member -MemberType NoteProperty -ErrorAction Ignore | S
     $Pool_PoolFee   = if ($Pool_Coin.fee -ne $null) {$Pool_Coin.fee} else {$Pool_Fee}
     $Pool_Regions   = if ($Pool_Coin.regions) {$Pool_Coin.regions} else {@("us")}
 
-    $Pool_Algorithm = $PoolCoins_Request.$Pool_CoinSymbol.algo
+    $Pool_Algorithm = if ($Pool_Coin.algo) {$Pool_Coin.algo} else {$PoolCoins_Request.$Pool_CoinSymbol.algo}
     $Pool_CoinName  = $PoolCoins_Request.$Pool_CoinSymbol.name
 
     if ($Pool_Algorithm -eq "equihash") {
@@ -92,9 +92,9 @@ $PoolCoins_Request | Get-Member -MemberType NoteProperty -ErrorAction Ignore | S
                 CoinName      = $Pool_CoinName
                 CoinSymbol    = $Pool_CoinSymbol
                 Currency      = $Pool_Currency
-                Price         = $Stat.$StatAverage #instead of .Live
-                StablePrice   = $Stat.Week
-                MarginOfError = $Stat.Week_Fluctuation
+                Price         = 0
+                StablePrice   = 0
+                MarginOfError = 0
                 Protocol      = "stratum+tcp"
                 Host          = "$(if ($Pool_Regions.Count -gt 1) {"$($Pool_Region)."})$($Pool_Host)"
                 Port          = $Pool_Port
@@ -102,13 +102,20 @@ $PoolCoins_Request | Get-Member -MemberType NoteProperty -ErrorAction Ignore | S
                 Pass          = "x{diff:,d=`$difficulty}"
                 Region        = $Pool_RegionsTable.$Pool_Region
                 SSL           = $false
-                Updated       = $Stat.Updated
+                Updated       = (Get-Date).ToUniversalTime()
                 PoolFee       = $Pool_PoolFee
                 Workers       = $PoolCoins_Request.$Pool_CoinSymbol.workers
                 Hashrate      = $Stat.HashRate_Live
                 BLK           = $Stat.BlockRate_Average
                 TSL           = $Pool_TSL
                 WTM           = $true
+                AlgorithmList = if ($Pool_Algorithm_Norm -match "-") {@($Pool_Algorithm_Norm, ($Pool_Algorithm_Norm -replace '\-.*$'))}else{@($Pool_Algorithm_Norm)}
+                Name          = $Name
+                Penalty       = 0
+                PenaltyFactor = 1
+                Wallet        = $Pool_User
+                Worker        = "{workername:$Worker}"
+                Email         = $Email
             }
         }
     }

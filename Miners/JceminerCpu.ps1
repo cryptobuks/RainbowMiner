@@ -17,8 +17,8 @@ $Version = "0.33q"
 if (-not $Session.DevicesByTypes.CPU -and -not $InfoOnly) {return} # No NVIDIA present in system
 
 $Commands = [PSCustomObject[]]@(
-    [PSCustomObject]@{MainAlgorithm = "cryptonight/1";          Threads = 1; ScratchPadMb = 2; Params = "--variation 3"}
-    [PSCustomObject]@{MainAlgorithm = "cryptonight/2";          Threads = 1; ScratchPadMb = 2; Params = "--variation 15"}
+    #[PSCustomObject]@{MainAlgorithm = "cryptonight/1";          Threads = 1; ScratchPadMb = 2; Params = "--variation 3"}
+    #[PSCustomObject]@{MainAlgorithm = "cryptonight/2";          Threads = 1; ScratchPadMb = 2; Params = "--variation 15"}
     [PSCustomObject]@{MainAlgorithm = "cryptonight/xfh";        Threads = 1; ScratchPadMb = 2; Params = "--variation 18"}
     [PSCustomObject]@{MainAlgorithm = "cryptonight/mkt";        Threads = 1; ScratchPadMb = 2; Params = "--variation 9"}
     [PSCustomObject]@{MainAlgorithm = "cryptonight/fast";       Threads = 1; ScratchPadMb = 2; Params = "--variation 11"}
@@ -105,18 +105,24 @@ $Session.DevicesByTypes.CPU | Select-Object Vendor, Model -Unique | ForEach-Obje
 		foreach($Algorithm_Norm in @($Algorithm_Norm,"$($Algorithm_Norm)-$($Miner_Model)")) {
 			if ($Pools.$Algorithm_Norm.Host -and $Miner_Device) {
 				[PSCustomObject]@{
-					Name = $Miner_Name
-					DeviceName = $Miner_Device.Name
-					DeviceModel = $Miner_Model
-					Path      = $Path
-					Arguments = $Arguments
-					HashRates = [PSCustomObject]@{$Algorithm_Norm = $Session.Stats."$($Miner_Name)_$($Algorithm_Norm -replace '\-.*$')_HashRate".Week}
-					API       = "Jceminer"
-					Port      = $Miner_Port
-					Uri       = $Uri
-					DevFee    = $DevFee
-					ManualUri = $ManualUri
-                    Version   = $Version
+					Name           = $Miner_Name
+					DeviceName     = $Miner_Device.Name
+					DeviceModel    = $Miner_Model
+					Path           = $Path
+					Arguments      = $Arguments
+					HashRates      = [PSCustomObject]@{$Algorithm_Norm = $Session.Stats."$($Miner_Name)_$($Algorithm_Norm -replace '\-.*$')_HashRate".Week}
+					API            = "Jceminer"
+					Port           = $Miner_Port
+					Uri            = $Uri
+                    FaultTolerance = $_.FaultTolerance
+					ExtendInterval = $_.ExtendInterval
+                    Penalty        = 0
+					DevFee         = $DevFee
+					ManualUri      = $ManualUri
+                    Version        = $Version
+                    PowerDraw      = 0
+                    BaseName       = $Name
+                    BaseAlgorithm  = @($Algorithm_Norm -replace '\-.*')
 				}
 			}
 		}

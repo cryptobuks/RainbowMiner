@@ -15,9 +15,11 @@ param(
 $Name = Get-Item $MyInvocation.MyCommand.Path | Select-Object -ExpandProperty BaseName
 
 $Pools_Data = @(
-    [PSCustomObject]@{symbol = "BBR";  port = 5577; fee = 0.5; rpc = "boolberry"; scratchpad = "http://#region#-bbr.luckypool.io/scratchpad.bin"; region = @("asia","eu")}
-    [PSCustomObject]@{symbol = "XWP";  port = 4888; fee = 0.9; rpc = "swap2"; divisor = 32; region = @("eu")}
-    [PSCustomObject]@{symbol = "ZANO"; port = 8877; fee = 0.9; rpc = "zano"; region = @("eu")}
+    [PSCustomObject]@{symbol = "BBR";   port = 5577; fee = 0.5; rpc = "boolberry"; scratchpad = "http://#region#-bbr.luckypool.io/scratchpad.bin"; region = @("asia","eu")}
+    [PSCustomObject]@{symbol = "RYO";   port = 7777; fee = 0.9; rpc = "ryo"; region = @("eu")}
+    [PSCustomObject]@{symbol = "XCASH"; port = 4477; fee = 0.9; rpc = "xcash"; region = @("eu")}
+    [PSCustomObject]@{symbol = "XWP";   port = 4888; fee = 0.9; rpc = "swap2"; divisor = 32; region = @("eu")}
+    [PSCustomObject]@{symbol = "ZANO";  port = 8877; fee = 0.9; rpc = "zano"; region = @("eu")}
 )
 
 $Pools_Data | Where-Object {$Wallets."$($_.symbol)" -or $InfoOnly} | ForEach-Object {
@@ -94,6 +96,13 @@ $Pools_Data | Where-Object {$Wallets."$($_.symbol)" -or $InfoOnly} | ForEach-Obj
                         BLK           = $Stat.BlockRate_Average
                         ScratchPadUrl = if ($Pool_ScratchPadUrl) {$Pool_ScratchPadUrl -replace "#region",$Pool_Region} else {$null}
                         EthMode       = if ($Pool_Algorithm_Norm -match "^(Ethash|ProgPow)") {"ethproxy"} else {$null}
+                        AlgorithmList = if ($Pool_Algorithm_Norm -match "-") {@($Pool_Algorithm_Norm, ($Pool_Algorithm_Norm -replace '\-.*$'))}else{@($Pool_Algorithm_Norm)}
+                        Name          = $Name
+                        Penalty       = 0
+                        PenaltyFactor = 1
+                        Wallet        = $Pool_Wallet.wallet
+                        Worker        = "{workername:$Worker}"
+                        Email         = $Email
                     }
                 }
                 $Pool_SSL = $true

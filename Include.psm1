@@ -426,7 +426,7 @@ function Set-MinerStats {
 
                 $Stat = $null
                 if (-not $Miner.IsBenchmarking() -or $Miner_Speed) {
-                    $Stat = Set-Stat -Name "$($Miner.Name)_$($Miner_Algorithm -replace '\-.*$')_HashRate" -Value $Miner_Speed -Difficulty $Miner_Diff -Duration $StatSpan -FaultDetection $true -FaultTolerance $Miner.FaultTolerance -PowerDraw $Miner_PowerDraw -Sub $Session.DevicesToVendors[$Miner.DeviceModel] -Quiet:$($Quiet -or ($Miner.GetRunningTime() -lt (New-TimeSpan -Seconds 30)) -or $Miner.IsWrapper())
+                    $Stat = Set-Stat -Name "$($Miner.Name)_$($Miner_Algorithm -replace '\-.*$')_HashRate" -Value $Miner_Speed -Difficulty $Miner_Diff -Ratio $Miner.RejectedShareRatio[$Miner_Index] -Duration $StatSpan -FaultDetection $true -FaultTolerance $Miner.FaultTolerance -PowerDraw $Miner_PowerDraw -Sub $Session.DevicesToVendors[$Miner.DeviceModel] -Quiet:$($Quiet -or ($Miner.GetRunningTime() -lt (New-TimeSpan -Seconds 30)) -or $Miner.IsWrapper())
                     $Statset++
                 }
 
@@ -566,6 +566,7 @@ Function Write-ActivityLog {
                 Speed          = @($Miner.Speed_Live)
                 Profit         = $Miner.Profit
                 PowerDraw      = $Miner.PowerDraw
+                Ratio          = $Miner.RejectedShareRatio
                 Crashed        = $Crashed
                 OCmode         = $ocmode
                 OCP            = if ($ocmode -eq "ocp") {$Miner.OCprofile} elseif ($ocmode -eq "msia") {$Miner.MSIAprofile} else {$null}
@@ -882,6 +883,8 @@ function Set-Stat {
         [Parameter(Mandatory = $false)]
         [Double]$Difficulty = 0.0,
         [Parameter(Mandatory = $false)]
+        [Double]$Ratio = 0.0,
+        [Parameter(Mandatory = $false)]
         [DateTime]$Updated = (Get-Date).ToUniversalTime(), 
         [Parameter(Mandatory = $true)]
         [TimeSpan]$Duration, 
@@ -938,6 +941,8 @@ function Set-Stat {
                     PowerDraw_Average  = [Double]$Stat.PowerDraw_Average
                     Diff_Live          = [Double]$Stat.Diff_Live
                     Diff_Average       = [Double]$Stat.Diff_Average
+                    Ratio_Live         = [Double]$Stat.Ratio_Live
+                    Ratio_Average      = [Double]$Stat.Ratio_Average
                 }
             }
             "Pools" {
@@ -1022,6 +1027,8 @@ function Set-Stat {
                         PowerDraw_Average  = if ($Stat.PowerDraw_Average -gt 0) {((1 - $Span_Week) * $Stat.PowerDraw_Average) + ($Span_Week * $PowerDraw)} else {$PowerDraw}
                         Diff_Live          = $Difficulty
                         Diff_Average       = if ($Stat.Diff_Average -gt 0) {((1 - $Span_Day) * $Stat.Diff_Average) + ($Span_Day * $Difficulty)} else {$Difficulty}
+                        Ratio_Live         = $Ratio
+                        Ratio_Average      = if ($Stat.Ratio_Average -gt 0) {[Math]::Round(((1 - $Span_Hour) * $Stat.Ratio_Average) + ($Span_Hour * $Ratio),4)} else {$Ratio}
                     }
                 }
                 "Pools" {
@@ -1064,6 +1071,7 @@ function Set-Stat {
                 Updated = $Updated
                 Failed = [Math]::Max($Stat.Failed-1,0)
             }
+            $Stat.PSObject.Properties.Name | Where-Object {$_ -match "Fluctuation" -and $Stat.$_ -gt 1} | Foreach-Object {$Stat.$_ = 0}
             if ($AddStat) {$Stat | Add-Member -NotePropertyMembers $AddStat}
         }
     }
@@ -1099,6 +1107,8 @@ function Set-Stat {
                     PowerDraw_Average  = $PowerDraw
                     Diff_Live          = $Difficulty
                     Diff_Average       = $Difficulty
+                    Ratio_Live         = $Ratio
+                    Ratio_Average      = $Ratio
                 }
             }
             "Pools" {
@@ -1145,6 +1155,8 @@ function Set-Stat {
                     PowerDraw_Average  = [Decimal]$Stat.PowerDraw_Average
                     Diff_Live          = [Decimal]$Stat.Diff_Live
                     Diff_Average       = [Decimal]$Stat.Diff_Average
+                    Ratio_Live         = [Decimal]$Stat.Ratio_Live
+                    Ratio_Average      = [Decimal]$Stat.Ratio_Average
                 }
             }
             "Pools" {
@@ -1155,7 +1167,7 @@ function Set-Stat {
                     BlockRate_Average  = [Decimal]$Stat.BlockRate_Average
                     Actual24h_Week     = [Decimal]$Stat.Actual24h_Week
                     Estimate24h_Week   = [Decimal]$Stat.Estimate24h_Week
-                    ErrorRatio         = [Decimal](1+$(if ($Stat.Actual24h_Week -and $Stat.Estimate24h_Week) {($Stat.Actual24h_Week/$Stat.Estimate24h_Week-1) * $(if ($Stat.Duration.TotalDays -lt 7) {$Stat.Duration.TotalDays/7*(2 - $Stat.Duration.TotalDays/7)} else {1})}))
+                    ErrorRatio         = [Decimal](1+$(if ($Stat.Estimate24h_Week) {($Stat.Actual24h_Week/$Stat.Estimate24h_Week-1) * $(if ($Stat.Duration.TotalDays -lt 7) {$Stat.Duration.TotalDays/7*(2 - $Stat.Duration.TotalDays/7)} else {1})}))
                 }
             }
         }
@@ -1370,28 +1382,21 @@ function Get-PoolsContent {
             InfoOnly = $InfoOnly
         }
         foreach($p in $Config.PSObject.Properties.Name) {$Parameters.$p = $Config.$p}
+
         foreach($Pool in @(& $_.FullName @Parameters)) {
-            if ($PoolName -eq "WhatToMine") {
-                $Pool
-            } else {
+            if ($PoolName -ne "WhatToMine") {
                 $Penalty = [Double]$Config.Penalty + [Double]$Algorithms."$($Pool.Algorithm)".Penalty + [Double]$Coins."$($Pool.CoinSymbol)".Penalty
                 $Pool_Factor = 1-($Penalty + [Double]$(if (-not $IgnoreFees){$Pool.PoolFee}) )/100
                 if ($EnableErrorRatio -and $Pool.ErrorRatio) {$Pool_Factor *= $Pool.ErrorRatio}
                 if ($Pool_Factor -lt 0) {$Pool_Factor = 0}
-                if ($Pool.Price -eq $null) {$Pool | Add-Member Price 0 -Force}
-                if ($Pool.StablePrice -eq $null) {$Pool | Add-Member StablePrice 0 -Force}
+                if ($Pool.Price -eq $null) {$Pool.Price = 0}
+                if ($Pool.StablePrice -eq $null) {$Pool.StablePrice = 0}
                 $Pool.Price *= $Pool_Factor
                 $Pool.StablePrice *= $Pool_Factor
-                $Pool | Add-Member -NotePropertyMembers @{
-                    AlgorithmList = if ($Pool.Algorithm -match "-") {@((Get-Algorithm $Pool.Algorithm), ($Pool.Algorithm -replace '\-.*$'))}else{@($Pool.Algorithm)}
-                    Name          = $Pool_Name
-                    Penalty       = $Penalty
-                    PenaltyFactor = $Pool_Factor
-                    Wallet        = $Config.Wallets."$($Pool.Currency)"
-                    Worker        = $Config.Worker
-                    Email         = $Config.Email
-                } -Force -PassThru
+                $Pool.Penalty = $Penalty
+                $Pool.PenaltyFactor = $Pool_Factor
             }
+            $Pool
         }
     }
 }
@@ -1416,14 +1421,16 @@ function Get-MinersContent {
         $Name = $Miner.BaseName
         if ($InfoOnly -or ((Compare-Object @($Session.DevicesToVendors.Values | Select-Object) @($Session.MinerInfo.$Name | Select-Object) -IncludeEqual -ExcludeDifferent | Measure-Object).Count -gt 0)) {
             foreach($c in @(& $Miner.FullName @Parameters)) {
-                $p = @($c.HashRates.PSObject.Properties.Name | Foreach-Object {$_ -replace '\-.*$'} | Select-Object)
-                $c | Add-Member -NotePropertyMembers @{
-                    Name = if ($c.Name) {$c.Name} else {$Name}
-                    BaseName = $Name
-                    BaseAlgorithm = $p
-                    DeviceModel = if (@($Session.DevicesByTypes.FullComboModels.PSObject.Properties.Name) -icontains $c.DeviceModel) {$Session.DevicesByTypes.FullComboModels."$($c.DeviceModel)"} else {$c.DeviceModel}
-                    PowerDraw = $Session.Stats."$($c.Name)_$($p[0])_HashRate".PowerDraw_Average
-                } -Force -PassThru
+                if ($InfoOnly) {
+                    $c | Add-Member -NotePropertyMembers @{
+                        Name     = if ($c.Name) {$c.Name} else {$Name}
+                        BaseName = $Name
+                    } -Force -PassThru
+                } else {
+                    $c.PowerDraw = $Session.Stats."$($c.Name)_$($c.BaseAlgorithm[0])_HashRate".PowerDraw_Average
+                    if (@($Session.DevicesByTypes.FullComboModels.PSObject.Properties.Name) -icontains $c.DeviceModel) {$c.DeviceModel = $Session.DevicesByTypes.FullComboModels."$($c.DeviceModel)"}
+                    $c
+                }
             }
         }
     }
@@ -1893,10 +1900,11 @@ function Start-SubProcessInScreen {
 
         $StopWatch = New-Object -TypeName System.Diagnostics.StopWatch
 
-        $Process = $null
-        $started = $false
+        $Process  = $null
+        $BashProc = $null
+        $started  = $false
 
-        if (-not $IsAdmin -and (Test-OCDaemon)) {
+        if (Test-OCDaemon) {
             $started = Invoke-OCDaemonWithName -Name "$OCDaemonPrefix.0.$ScreenName" -FilePath $PIDBash -Move -Quiet
         } else {
             $ProcessParams = @{
@@ -1905,10 +1913,13 @@ function Start-SubProcessInScreen {
                 WorkingDirectory = $WorkingDirectory
                 PassThru         = $true
             }
-            if ($null -ne (Start-Process @ProcessParams)) {$started=$true}
+            if ($null -ne ($BashProc = Start-Process @ProcessParams)) {
+                $started = $BashProc.WaitForExit(60000)
+                Remove-Variable "BashProc" -Force
+            }
         }
         if ($started) {
-            $StopWatch.Restart()            
+            $StopWatch.Restart()
             do {
                 Start-Sleep -Milliseconds 500
                 if (Test-Path $PIDPath) {
@@ -1935,7 +1946,7 @@ function Start-SubProcessInScreen {
         do {
             if ($ControllerProcess.WaitForExit(1000)) {
                 $ArgumentList = "--stop --name $ProcessName --pidfile $PIDPath --retry 5"
-                if (-not $IsAdmin -and (Test-OCDaemon)) {
+                if (Test-OCDaemon) {
                     Invoke-OCDaemonWithName -Name "$OCDaemonPrefix.1.$ScreenName" -Cmd "start-stop-daemon $ArgumentList" -Quiet > $null
                 } else {
                     (Start-Process "start-stop-daemon" -ArgumentList $ArgumentList -PassThru).WaitForExit() > $null
@@ -2043,7 +2054,7 @@ function Stop-SubProcess {
                             $PIDInfo = Join-Path (Resolve-Path ".\Data\pid") "$($Job.ScreenName)_info.txt"
                             if ($MI = Get-Content $PIDInfo -Raw -ErrorAction Ignore | ConvertFrom-Json -ErrorAction Ignore) {
                                 $ArgumentList = "--stop --name $($Process.Name) --pidfile $($MI.pid_path) --retry 5"
-                                if (-not $Session.IsAdmin -and (Test-OCDaemon)) {
+                                if (Test-OCDaemon) {
                                     $Msg = Invoke-OCDaemon -Cmd "start-stop-daemon $ArgumentList"
                                     if ($Msg) {Write-Log -Level Info "OCDaemon reports: $Msg"}
                                 } else {
@@ -3667,7 +3678,7 @@ class Miner {
     $LogFile    
     [Bool]$ShowMinerWindow = $false
     $MSIAprofile
-    $OCprofile
+    [hashtable]$OCprofile = @{}
     $DevFee
     $BaseName = $null
     $FaultTolerance = 0.1
@@ -3684,6 +3695,7 @@ class Miner {
     $MiningPriority
     $MiningAffinity
     $ManualUri
+    [Double[]]$RejectedShareRatio = @()
     [String]$EthPillEnable = "disable"
     [String]$EthPillEnableMTP = "disable"
     $DataInterval
@@ -3802,7 +3814,10 @@ class Miner {
 
     hidden StartMiningPreProcess() {
         $this.Stratum = @()
-        $this.Algorithm | Foreach-Object {$this.Stratum += [PSCustomObject]@{Accepted=0;Rejected=0}}
+        $this.Algorithm | Foreach-Object {
+            $this.Stratum += [PSCustomObject]@{Accepted=0;Rejected=0}
+            $this.RejectedShareRatio += 0.0
+        }
         $this.ActiveLast = Get-Date
     }
 
@@ -3961,26 +3976,33 @@ class Miner {
     UpdateShares([Int]$Index,[Double]$Accepted,[Double]$Rejected) {
         $this.Stratum[$Index].Accepted = $Accepted
         $this.Stratum[$Index].Rejected = $Rejected
+        if ($Accepted + $Rejected) {
+            $this.RejectedShareRatio[$Index] = [Math]::Round($Rejected / ($Accepted + $Rejected),4)
+        }
     }
 
     [Int64]GetShareCount([Int]$Index) {
         return [Int64]($this.Stratum[$Index].Accepted + $this.Stratum[$Index].Rejected)
     }
 
-    [Double]GetRejectedShareRatio([Int]$Index) {
-        return [Double]$(if ($this.GetShareCount($Index) -ge 10) {$this.Stratum[$Index].Rejected / $this.GetShareCount($Index)})
+    [Double]GetRejectedShareRatio([Int]$Index,[Int]$minShares) {
+        return [Double]$(if ($this.GetShareCount($Index) -ge $minShares) {$this.Stratum[$Index].Rejected / $this.GetShareCount($Index)})
+    }
+
+    [Double]GetMaxRejectedShareRatio([Int]$minShares) {
+        $Index = 0
+        return ($this.Algorithm | Foreach-Object {$this.GetRejectedShareRatio($Index,$minShares);$Index++} | Measure-Object -Maximum).Maximum
     }
 
     [Double]GetMaxRejectedShareRatio() {
-        $Index = 0
-        return ($this.Algorithm | Foreach-Object {$this.GetRejectedShareRatio($Index);$Index++} | Measure-Object -Maximum).Maximum
+        return $this.GetMaxRejectedShareRatio(10)
     }
 
     [Bool]CheckShareRatio() {
         return $this.MaxRejectedShareRatio -le 0 -or $this.GetMaxRejectedShareRatio() -le $this.MaxRejectedShareRatio
     }
 
-    [String[]]UpdateMinerData () {
+    [Void]UpdateMinerData () {
 
         if ($this.Process.HasMoreData) {
             $Date = (Get-Date).ToUniversalTime()
@@ -4051,19 +4073,14 @@ class Miner {
 
             $this.CleanupMinerData()
         }
-
-        return @()
     }
 
     AddMinerData($data) {
-        $data | Add-Member Date (Get-Date).ToUniversalTime() -Force
-        $data | Add-Member PowerDraw $(Get-DevicePowerDraw -DeviceName $this.DeviceName) -Force
-        $data | Add-Member Round $this.Rounds -Force
-        $this.Data += $data
-        if ($this.Data.Count -gt $this.MinSamples) {
-            $DataMinTime = (Get-Date).ToUniversalTime().AddSeconds( - $this.DataInterval*[Math]::max($this.ExtendInterval,1)*2)
-            $i=0; $this.Data = @($this.Data | Foreach-Object {if ($_.Date -ge $DataMinTime -or ($this.Data.Count - $i) -le $this.MinSamples) {$_};$i++} | Select-Object)
-        }
+        $this.Data += $data | Add-Member -NotePropertyMembers @{
+            Date = (Get-Date).ToUniversalTime()
+            PowerDraw = $(Get-DevicePowerDraw -DeviceName $this.DeviceName)
+            Round = $this.Rounds
+        } -Force -PassThru
         $this.ActiveLast = Get-Date
     }
 
@@ -4072,6 +4089,10 @@ class Miner {
     }
 
     CleanupMinerData() {
+        if ($this.Data.Count -gt $this.MinSamples) {
+            $DataMinTime = (Get-Date).ToUniversalTime().AddSeconds( - $this.DataInterval*[Math]::max($this.ExtendInterval,1)*2)
+            $i=0; $this.Data = @($this.Data | Foreach-Object {if ($_.Date -ge $DataMinTime -or ($this.Data.Count - $i) -le $this.MinSamples) {$_};$i++} | Select-Object)
+        }
     }
 
     ResetMinerData() {
@@ -4168,6 +4189,7 @@ class Miner {
         } catch {
             if ($Error.Count){$Error.RemoveAt(0)}
             Write-Log -Level Warn "Failed to communicate with MSI Afterburner"
+            $this.OCprofileBackup = @()
             return
         }
         if ($Sleep -gt 0) {Start-Sleep -Milliseconds $Sleep}
@@ -4194,7 +4216,7 @@ class Miner {
         [System.Collections.ArrayList]$NvCmd = @()
         [System.Collections.ArrayList]$AmdCmd = @()
 
-        $Vendor = $Script:GlobalCachedDevices | Where-Object {@($this.OCprofile.PSObject.Properties.Name) -icontains $_.Model} | Select-Object -ExpandProperty Vendor -Unique
+        $Vendor = $Script:GlobalCachedDevices | Where-Object {$this.OCprofile.ContainsKey($_.Model)} | Select-Object -ExpandProperty Vendor -Unique
 
         if ($Global:IsWindows) {
             if ($Vendor -ne "NVIDIA") {
@@ -4216,7 +4238,7 @@ class Miner {
         }
 
         $Profiles = [PSCustomObject]@{}
-        foreach ($DeviceModel in @($this.OCprofile.PSObject.Properties.Name)) {
+        foreach ($DeviceModel in @($this.OCprofile.Keys)) {
             $x = Switch -Regex ($DeviceModel) {
                 "1050" {2}
                 "P106-?100" {2}
@@ -4289,7 +4311,7 @@ class Miner {
                         try {if (-not ($GpuEntry.CoreClockBoostMin -eq 0 -and $GpuEntry.CoreClockBoostMax -eq 0) -and $Profile.CoreClockBoost -match '^\-*[0-9]+$') {$ProfileBackup.CoreClockBoostCur = $GpuEntry.CoreClockBoostCur;$Script:abControl.GpuEntries[$_].CoreClockBoostCur = [math]::max([math]::min([convert]::ToInt32($Profile.CoreClockBoost) * 1000,$GpuEntry.CoreClockBoostMax),$GpuEntry.CoreClockBoostMin)}} catch {if ($Error.Count){$Error.RemoveAt(0)};Write-Log -Level Warn $_.Exception.Message}
                         try {if (-not ($GpuEntry.MemoryClockBoostMin -eq 0 -and $GpuEntry.MemoryClockBoostMax -eq 0) -and $Profile.MemoryClockBoost -match '^\-*[0-9]+$') {$ProfileBackup.MemoryClockBoostCur = $GpuEntry.MemoryClockBoostCur;$Script:abControl.GpuEntries[$_].MemoryClockBoostCur = [math]::max([math]::min([convert]::ToInt32($Profile.MemoryClockBoost) * 1000,$GpuEntry.MemoryClockBoostMax),$GpuEntry.MemoryClockBoostMin)}} catch {if ($Error.Count){$Error.RemoveAt(0)};Write-Log -Level Warn $_.Exception.Message}
                         if ($Profile.LockVoltagePoint -match '^\-*[0-9]+$') {Write-Log -Level Warn "$DeviceModel does not support LockVoltagePoint overclocking"}
-                        if ($ProfileBackup.Count) {$ProfileBackup.Index = $_;$this.OCprofileBackup += $ProfileBackup > $null;$applied_any=$true}
+                        if ($ProfileBackup.Count) {$ProfileBackup.Index = $_;$this.OCprofileBackup += $ProfileBackup;$applied_any=$true}
                     }
                     $DeviceId++
                 }                 
@@ -5354,13 +5376,23 @@ function Get-ConfigPath {
         [Parameter(Mandatory = $True)]
         [string]$ConfigName,
         [Parameter(Mandatory = $False)]
-        [string]$WorkerName = ""
+        [string]$WorkerName = "",
+        [Parameter(Mandatory = $False)]
+        [string]$GroupName = ""
     )
     if (Test-Config $ConfigName -Exists) {
         $PathToFile = $Session.ConfigFiles[$ConfigName].Path
-        if ($WorkerName) {
-            $PathToFileM = Join-Path (Join-Path (Split-Path $PathToFile) $WorkerName.ToLower()) (Split-Path -Leaf $PathToFile)
-            if (Test-Path $PathToFileM) {$PathToFile = $PathToFileM}
+        if ($WorkerName -or $GroupName) {
+            $FileName = Split-Path -Leaf $PathToFile
+            $FilePath = Split-Path $PathToFile
+            if ($WorkerName) {
+                $PathToFileM = Join-Path (Join-Path $FilePath $WorkerName.ToLower()) $FileName
+                if (Test-Path $PathToFileM) {$PathToFile = $PathToFileM}
+            }
+            if ($GroupName) {
+                $PathToFileM = Join-Path (Join-Path $FilePath $GroupName.ToLower()) $FileName
+                if (Test-Path $PathToFileM) {$PathToFile = $PathToFileM}
+            }
         }
         $PathToFile
     }
@@ -5376,12 +5408,14 @@ function Get-ConfigContent {
         [Parameter(Mandatory = $False)]
         [string]$WorkerName = "",
         [Parameter(Mandatory = $False)]
+        [string]$GroupName = "",
+        [Parameter(Mandatory = $False)]
         [Switch]$UpdateLastWriteTime,
         [Parameter(Mandatory = $False)]
         [Switch]$ConserveUnkownParameters
     )
     if ($UpdateLastWriteTime) {$WorkerName = ""}
-    if ($PathToFile = Get-ConfigPath $ConfigName $WorkerName) {
+    if ($PathToFile = Get-ConfigPath -ConfigName $ConfigName -WorkerName $WorkerName -GroupName $GroupName) {
         try {
             if ($UpdateLastWriteTime) {
                 $Session.ConfigFiles[$ConfigName].LastWriteTime = (Get-ChildItem $PathToFile).LastWriteTime.ToUniversalTime()
@@ -5412,7 +5446,7 @@ function Get-SessionServerConfig {
 
     $CurrentConfig = if ($Session.Config) {$Session.Config} else {
         $Result = Get-ConfigContent "Config"
-        @("RunMode","ServerName","ServerPort","ServerUser","ServerPassword","EnableServerConfig","ServerConfigName","ExcludeServerConfigVars","EnableServerExcludeList","WorkerName") | Where-Object {$Session.DefaultValues.ContainsKey($_) -and $Result.$_ -eq "`$$_"} | ForEach-Object {
+        @("RunMode","ServerName","ServerPort","ServerUser","ServerPassword","EnableServerConfig","ServerConfigName","ExcludeServerConfigVars","EnableServerExcludeList","WorkerName","GroupName") | Where-Object {$Session.DefaultValues.ContainsKey($_) -and $Result.$_ -eq "`$$_"} | ForEach-Object {
             $val = $Session.DefaultValues[$_]
             if ($val -is [array]) {$val = $val -join ','}
             $Result.$_ = $val
@@ -5423,7 +5457,7 @@ function Get-SessionServerConfig {
     if ($CurrentConfig -and $CurrentConfig.RunMode -eq "client" -and $CurrentConfig.ServerName -and $CurrentConfig.ServerPort -and (Get-Yes $CurrentConfig.EnableServerConfig)) {
         $ServerConfigName = if ($CurrentConfig.ServerConfigName) {Get-ConfigArray $CurrentConfig.ServerConfigName}
         if (($ServerConfigName | Measure-Object).Count) {
-            Get-ServerConfig -ConfigFiles $Session.ConfigFiles -ConfigName $ServerConfigName -ExcludeConfigVars (Get-ConfigArray $CurrentConfig.ExcludeServerConfigVars) -Server $CurrentConfig.ServerName -Port $CurrentConfig.ServerPort -WorkerName $CurrentConfig.WorkerName -Username $CurrentConfig.ServerUser -Password $CurrentConfig.ServerPassword -Force:$Force -EnableServerExcludeList:(Get-Yes $CurrentConfig.EnableServerExcludeList) > $null
+            Get-ServerConfig -ConfigFiles $Session.ConfigFiles -ConfigName $ServerConfigName -ExcludeConfigVars (Get-ConfigArray $CurrentConfig.ExcludeServerConfigVars) -Server $CurrentConfig.ServerName -Port $CurrentConfig.ServerPort -WorkerName $CurrentConfig.WorkerName -GroupName $CurrentConfig.GroupName -Username $CurrentConfig.ServerUser -Password $CurrentConfig.ServerPassword -Force:$Force -EnableServerExcludeList:(Get-Yes $CurrentConfig.EnableServerExcludeList) > $null
         }
     }
 }
@@ -5444,6 +5478,8 @@ function Get-ServerConfig {
         [Parameter(Mandatory = $False)]
         [string]$WorkerName = "",
         [Parameter(Mandatory = $False)]
+        [string]$GroupName = "",
+        [Parameter(Mandatory = $False)]
         [string]$Username = "",
         [Parameter(Mandatory = $False)]
         [string]$Password = "",
@@ -5456,11 +5492,11 @@ function Get-ServerConfig {
     $ConfigName = $ConfigName | Where-Object {Test-Config $_ -Exists}
     if (($ConfigName | Measure-Object).Count -and $Server -and $Port -and (Test-TcpServer -Server $Server -Port $Port -Timeout 2)) {
         if (-not (Test-Path ".\Data\serverlwt")) {New-Item ".\Data\serverlwt" -ItemType "directory" -ErrorAction Ignore > $null}
-        $ServerLWTFile = Join-Path ".\Data\serverlwt" "$(if ($WorkerName) {$WorkerName} else {"this"})_$($Server.ToLower() -replace '\.','-')_$($Port).json"
+        $ServerLWTFile = Join-Path ".\Data\serverlwt" "$(if ($GroupName) {$GroupName} elseif ($WorkerName) {$WorkerName} else {"this"})_$($Server.ToLower() -replace '\.','-')_$($Port).json"
         $ServerLWT = if (Test-Path $ServerLWTFile) {try {Get-Content $ServerLWTFile -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop} catch {if ($Error.Count){$Error.RemoveAt(0)}}}
         if (-not $ServerLWT) {$ServerLWT = [PSCustomObject]@{}}
         $Params = ($ConfigName | Foreach-Object {$PathToFile = $ConfigFiles[$_].Path;"$($_)ZZZ$(if ($Force -or -not (Test-Path $PathToFile) -or -not $ServerLWT.$_) {"0"} else {$ServerLWT.$_})"}) -join ','
-        $Uri = "http://$($Server):$($Port)/getconfig?config=$($Params)&workername=$($WorkerName)&machinename=$($Session.MachineName)&myip=$($Session.MyIP)&version=$(if ($Session.Version -match "^4\.4") {"4.3.9.9"} else {$Session.Version})"
+        $Uri = "http://$($Server):$($Port)/getconfig?config=$($Params)&workername=$($WorkerName)&groupname=$($GroupName)&machinename=$($Session.MachineName)&myip=$($Session.MyIP)&version=$(if ($Session.Version -match "^4\.4") {"4.3.9.9"} else {$Session.Version})"
         $Result = Invoke-GetUrl $Uri -user $Username -password $Password -ForceLocal -timeout 8
         if ($Result.Status -and $Result.Content) {
             if ($EnableServerExcludeList -and $Result.ExcludeList) {$ExcludeConfigVars = $Result.ExcludeList}

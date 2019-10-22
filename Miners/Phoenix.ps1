@@ -9,16 +9,16 @@ if (-not $IsWindows -and -not $IsLinux) {return}
 
 if ($IsLinux) {
     $Path = ".\Bin\GPU-Phoenix\PhoenixMiner"
-    $URI = "https://github.com/RainbowMiner/miner-binaries/releases/download/v4.6c-phoenix/PhoenixMiner_4.6c_Linux.tar.gz"
+    $URI = "https://github.com/RainbowMiner/miner-binaries/releases/download/v4.7c-phoenix/PhoenixMiner_4.7c_Linux.tar.gz"
 } else {
     $Path = ".\Bin\GPU-Phoenix\PhoenixMiner.exe"
-    $URI = "https://github.com/RainbowMiner/miner-binaries/releases/download/v4.6c-phoenix/PhoenixMiner_4.6c_Windows.7z"
+    $URI = "https://github.com/RainbowMiner/miner-binaries/releases/download/v4.7c-phoenix/PhoenixMiner_4.7c_Windows.7z"
 }
 $ManualURI = "https://bitcointalk.org/index.php?topic=2647654.0"
 $Port = "308{0:d2}"
 $DevFee = 0.65
 $Cuda = "8.0"
-$Version = "4.6c"
+$Version = "4.7c"
 
 if (-not $Session.DevicesByTypes.NVIDIA -and -not $Session.DevicesByTypes.AMD -and -not $InfoOnly) {return} # No GPU present in system
 
@@ -89,23 +89,29 @@ foreach ($Miner_Vendor in @("AMD","NVIDIA")) {
 
                     $Coin = if ($Algorithm_Norm -match "ProgPow") {"bci"}
                             elseif ($Pools.$Algorithm_Norm.CoinSymbol -eq "UBQ" -or $Pools.$Algorithm_Norm.CoinName -like "ubiq") {"ubq"}
+                            elseif ($Pools.$Algorithm_Norm.CoinSymbol -eq "QKC" -or $Pools.$Algorithm_Norm.CoinName -like "quarkchain") {"qkc"}
                             else {"auto"}
 
 					[PSCustomObject]@{
-						Name = $Miner_Name
-						DeviceName = $Miner_Device.Name
-						DeviceModel = $Miner_Model
-						Path = $Path
-						Arguments = "-cdmport $($Miner_Port) -coin $($Coin) -di $($DeviceIDsAll) -pool $(if($Pools.$Algorithm_Norm.SSL){"ssl://"})$($Pools.$Algorithm_Norm.Host):$($Pool_Port) $(if ($Pools.$Algorithm_Norm.Wallet -and $Pools.$Algorithm_Norm.Name -notmatch "nicehash") {"-wal $($Pools.$Algorithm_Norm.Wallet) -worker $($Pools.$Algorithm_Norm.Worker)"} else {"-wal $($Pools.$Algorithm_Norm.User)"})$(if ($Pools.$Algorithm_Norm.Pass) {" -pass $($Pools.$Algorithm_Norm.Pass)"}) $($Miner_Protocol_Params) $($Miner_Deviceparams) $($CommonParams) $($_.Params)"
-						HashRates = [PSCustomObject]@{$Algorithm_Norm = $($Session.Stats."$($Miner_Name)_$($Algorithm_Norm -replace '\-.*$')_HashRate".Week)}
-						API = "Claymore"
-						Port = $Miner_Port
-						Uri = $Uri
-						DevFee = $DevFee
-						ManualUri = $ManualUri
-                        StartCommand = "Get-ChildItem `"$(Join-Path ($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path) | Split-Path) "*pools.txt")`" | Remove-Item -Force"
-                        ExtendInterval = 2
-                        Version     = $Version
+						Name           = $Miner_Name
+						DeviceName     = $Miner_Device.Name
+						DeviceModel    = $Miner_Model
+						Path           = $Path
+						Arguments      = "-cdmport $($Miner_Port) -coin $($Coin) -di $($DeviceIDsAll) -pool $(if($Pools.$Algorithm_Norm.SSL){"ssl://"})$($Pools.$Algorithm_Norm.Host):$($Pool_Port) $(if ($Pools.$Algorithm_Norm.Wallet -and $Pools.$Algorithm_Norm.Name -notmatch "nicehash") {"-wal $($Pools.$Algorithm_Norm.Wallet) -worker $($Pools.$Algorithm_Norm.Worker)"} else {"-wal $($Pools.$Algorithm_Norm.User)"})$(if ($Pools.$Algorithm_Norm.Pass) {" -pass $($Pools.$Algorithm_Norm.Pass)"}) $($Miner_Protocol_Params) $($Miner_Deviceparams) $($CommonParams) $($_.Params)"
+						HashRates      = [PSCustomObject]@{$Algorithm_Norm = $($Session.Stats."$($Miner_Name)_$($Algorithm_Norm -replace '\-.*$')_HashRate".Week)}
+						API            = "Claymore"
+						Port           = $Miner_Port
+						Uri            = $Uri
+					    FaultTolerance = $_.FaultTolerance
+					    ExtendInterval = 2
+                        Penalty        = 0
+						DevFee         = $DevFee
+						ManualUri      = $ManualUri
+                        StartCommand   = "Get-ChildItem `"$(Join-Path ($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path) | Split-Path) "*pools.txt")`" | Remove-Item -Force"
+                        Version        = $Version
+                        PowerDraw      = 0
+                        BaseName       = $Name
+                        BaseAlgorithm  = @($Algorithm_Norm -replace '\-.*')
 					}
 				}
 			}

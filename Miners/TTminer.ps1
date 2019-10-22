@@ -5,15 +5,20 @@ param(
     [Bool]$InfoOnly
 )
 
-if (-not $IsWindows) {return}
+if (-not $IsWindows -and -not $IsLinux) {return}
 
-$Path = ".\Bin\NVIDIA-TTminer\TT-Miner.exe"
-$Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v2.2.6-ttminer/TT-Miner-2.2.6.zip"
+if ($IsLinux) {
+    $Path = ".\Bin\NVIDIA-TTminer\TT-Miner"
+    $Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v3.0.10-ttminer/TT-Miner-3.0.10.tar.xz"
+} else {
+    $Path = ".\Bin\NVIDIA-TTminer\TT-Miner.exe"
+    $Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v3.0.10-ttminer/TT-Miner-3.0.10.zip"
+}
 $ManualUri = "https://bitcointalk.org/index.php?topic=5025783.0"
 $Port = "333{0:d2}"
 $DevFee = 1.0
 $Cuda = "9.2"
-$Version = "2.2.6"
+$Version = "3.0.10"
 
 if (-not $Session.DevicesByTypes.NVIDIA -and -not $InfoOnly) {return} # No NVIDIA present in system
 
@@ -28,9 +33,9 @@ $Commands = [PSCustomObject[]]@(
     [PSCustomObject]@{MainAlgorithm = "PROGPOW2gb"    ; MinMemGB = 2; NH = $false; Params = "-A PROGPOW%CUDA%"; ExtendInterval = 2} #ProgPoW2gb 
     [PSCustomObject]@{MainAlgorithm = "PROGPOW3gb"    ; MinMemGB = 3; NH = $false; Params = "-A PROGPOW%CUDA%"; ExtendInterval = 2} #ProgPoW3gb 
     [PSCustomObject]@{MainAlgorithm = "PROGPOW"       ; MinMemGB = 4; NH = $false; Params = "-A PROGPOW%CUDA%"; ExtendInterval = 2} #ProgPoW (BCI)
-    [PSCustomObject]@{MainAlgorithm = "PROGPOW2gb"    ; MinMemGB = 2; NH = $false; Params = "-A PROGPOW092%CUDA%"; Coins = @("HORA","SERO"); ExtendInterval = 2; Cuda ="10.1"} #ProgPoW2gb 
-    [PSCustomObject]@{MainAlgorithm = "PROGPOW3gb"    ; MinMemGB = 3; NH = $false; Params = "-A PROGPOW092%CUDA%"; Coins = @("HORA","SERO"); ExtendInterval = 2; Cuda ="10.1"} #ProgPoW3gb
-    [PSCustomObject]@{MainAlgorithm = "PROGPOW"       ; MinMemGB = 4; NH = $false; Params = "-A PROGPOW092%CUDA%"; Coins = @("HORA","SERO"); ExtendInterval = 2; Cuda ="10.1"} #ProgPoW (BNA,HORA,SERO)
+    [PSCustomObject]@{MainAlgorithm = "PROGPOW2gb"    ; MinMemGB = 2; NH = $false; Params = "-A PROGPOW092%CUDA%"; Coins = @("BNA","HORA","SERO"); ExtendInterval = 2; Cuda ="10.1"} #ProgPoW2gb 
+    [PSCustomObject]@{MainAlgorithm = "PROGPOW3gb"    ; MinMemGB = 3; NH = $false; Params = "-A PROGPOW092%CUDA%"; Coins = @("BNA","HORA","SERO"); ExtendInterval = 2; Cuda ="10.1"} #ProgPoW3gb
+    [PSCustomObject]@{MainAlgorithm = "PROGPOW"       ; MinMemGB = 4; NH = $false; Params = "-A PROGPOW092%CUDA%"; Coins = @("BNA","HORA","SERO"); ExtendInterval = 2; Cuda ="10.1"} #ProgPoW (BNA,HORA,SERO)
     [PSCustomObject]@{MainAlgorithm = "PROGPOWZ2gb"   ; MinMemGB = 2; NH = $false; Params = "-A PROGPOWZ%CUDA%"; ExtendInterval = 2; Cuda ="10.1"} #ProgPoWZ2gb
     [PSCustomObject]@{MainAlgorithm = "PROGPOWZ3gb"   ; MinMemGB = 3; NH = $false; Params = "-A PROGPOWZ%CUDA%"; ExtendInterval = 2; Cuda ="10.1"} #ProgPoWZ3gb
     [PSCustomObject]@{MainAlgorithm = "PROGPOWZ"      ; MinMemGB = 4; NH = $false; Params = "-A PROGPOWZ%CUDA%"; ExtendInterval = 2; Cuda ="10.1"} #ProgPoWZ (ZANO)
@@ -96,12 +101,16 @@ $Session.DevicesByTypes.NVIDIA | Select-Object Vendor, Model -Unique | ForEach-O
 					API            = "Claymore"
 					Port           = $Miner_Port                
 					Uri            = $Uri
-					DevFee         = $DevFee
-					FaultTolerance = $_.FaultTolerance
+                    FaultTolerance = $_.FaultTolerance
 					ExtendInterval = $_.ExtendInterval
+                    Penalty        = 0
+					DevFee         = $DevFee
 					ManualUri      = $ManualUri
                     StopCommand    = "Sleep 5"
                     Version        = $Version
+                    PowerDraw      = 0
+                    BaseName       = $Name
+                    BaseAlgorithm  = @($Algorithm_Norm -replace '\-.*')
 				}
 			}
 		}

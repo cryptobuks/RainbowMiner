@@ -65,9 +65,7 @@ $Pools_Data = @(
     [PSCustomObject]@{rpc = "grin";  symbol = "GRIN";  port = 3030; fee = 1.0; divisor = 1e9; cycles = 42}
     [PSCustomObject]@{rpc = "ae";    symbol = "AE";    port = 4040; fee = 1.0; divisor = 1e8}
     [PSCustomObject]@{rpc = "rvn";   symbol = "RVN";   port = 6060; fee = 1.0; divisor = 1e8}
-
-    #[PSCustomObject]@{rpc = "grin";  symbol = "GRIN";  port = 3030; fee = 1.0; divisor = 1e9; cycles = 42; primary = $true}
-    #[PSCustomObject]@{rpc = "progpow-eth"; symbol = "ETH"; port = 2020; fee = 1.0; divisor = 1e18}
+    [PSCustomObject]@{rpc = "beam";  symbol = "BEAM";  port = 5252; fee = 1.0; divisor = 1e8}
 )
 
 $Pools_Data | Where-Object {$Wallets."$($_.symbol)" -or $InfoOnly} | ForEach-Object {
@@ -152,7 +150,6 @@ $Pools_Data | Where-Object {$Wallets."$($_.symbol)" -or $InfoOnly} | ForEach-Obj
                 Port          = $_.port
                 User          = "$($Pool_Wallet).{workername:$Worker}"
                 Pass          = "x"
-                Worker        = "{workername:$Worker}"
                 Region        = $Pool_RegionsTable."$(if ($_.host -match "^(asia|us)-") {$Matches[1]} else {"eu"})"
                 SSL           = $false
                 Updated       = $Stat.Updated
@@ -163,6 +160,13 @@ $Pools_Data | Where-Object {$Wallets."$($_.symbol)" -or $InfoOnly} | ForEach-Obj
                 TSL           = $Pool_TSL
                 BLK           = $Stat.BlockRate_Average
                 EthMode       = if ($Pool_Algorithm_Norm -match "^(Ethash|ProgPow)") {"ethproxy"} else {$null}
+                AlgorithmList = if ($Pool_Algorithm_Norm -match "-") {@($Pool_Algorithm_Norm, ($Pool_Algorithm_Norm -replace '\-.*$'))}else{@($Pool_Algorithm_Norm)}
+                Name          = $Name
+                Penalty       = 0
+                PenaltyFactor = 1
+                Wallet        = $Pool_Wallet
+                Worker        = "{workername:$Worker}"
+                Email         = $Email
             }
         }
     }

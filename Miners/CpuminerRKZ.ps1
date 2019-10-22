@@ -8,23 +8,34 @@ param(
 if (-not $IsWindows -and -not $IsLinux) {return}
 
 if ($IsLinux) {
-    $Path = ".\Bin\CPU-Nosuch\cpuminer-$($f=$Global:GlobalCPUInfo.Features;$(if($f.avx2 -and $f.sha -and $f.aes){'avx2-sha'}elseif($f.avx2 -and $f.aes){'avx2'}elseif($f.sse2 -and $f.aes){'aes-sse2'}else{'sse2'}))"
-    $URI = "https://github.com/RainbowMiner/miner-binaries/releases/download/v3.8.8.1m4-nosuch/cpu-nosuch-m4-ubuntu18.7z"
+    $Path = ".\Bin\CPU-rkz\cpuminer-$($f=$Global:GlobalCPUInfo.Features;$(if($f.avx2 -and $f.sha -and $f.aes){'avx2-sha'}elseif($f.avx2 -and $f.aes){'avx2'}elseif($f.sse2 -and $f.aes){'aes-sse2'}else{'sse2'}))"
+    $URI = "https://github.com/RainbowMiner/miner-binaries/releases/download/v3.9.7c-cpuminerrkz/cpuminer-RKZ-3.9.7c-ubuntu18.7z"
 } else {
-    $Path = ".\Bin\CPU-Nosuch\cpuminer-$($f=$Global:GlobalCPUInfo.Features;$(if($f.avx2 -and $f.sha -and $f.aes){'avx2-sha'}elseif($f.avx2 -and $f.aes){'avx2'}elseif($f.sse2 -and $f.aes){'aes-sse2'}else{'sse2'})).exe"
-    $URI = "https://github.com/RainbowMiner/miner-binaries/releases/download/v3.8.8.1m4-nosuch/cpu-nosuch-m4-win64.7z"
+    $Path = ".\Bin\CPU-rkz\cpuminer-$($f=$Global:GlobalCPUInfo.Features;$(if($f.avx2 -and $f.sha -and $f.aes){'sha-avx2'}elseif($f.avx2 -and $f.aes){'avx2'}elseif($f.sse42 -and $f.aes){'aes-sse42'}else{'sse2'})).exe"
+    $URI = "https://github.com/RainbowMiner/miner-binaries/releases/download/v3.9.7c-cpuminerrkz/cpuminer-RKZ-3.9.7c-win64.7z"
 }
-$ManualUri = "https://github.com/patrykwnosuch/cpuminer-nosuch/releases"
-$Port = "531{0:d2}"
+$ManualUri = "https://github.com/patrykwnosuch/cpuminer-RKZ/releases"
+$Port = "542{0:d2}"
 $DevFee = 0.0
-$Version = "3.8.8.1-m4"
+$Version = "3.9.7c"
 
 if (-not $Session.DevicesByTypes.CPU -and -not $InfoOnly) {return} # No CPU present in system
 
 $Commands = [PSCustomObject[]]@(
-    [PSCustomObject]@{MainAlgorithm = "binarium-v1"; Params = ""} #Binarium-V1
-    [PSCustomObject]@{MainAlgorithm = "hodl"; Params = ""} #HODL
-    #[PSCustomObject]@{MainAlgorithm = "m7m"; Params = ""} #M7M (CpuminerRKZ faster)
+    #[PSCustomObject]@{MainAlgorithm = "argon2d250"; Params = ""} #Argon2d-crds
+    #[PSCustomObject]@{MainAlgorithm = "argon2d500"; Params = ""} #Argon2d-dyn
+    #[PSCustomObject]@{MainAlgorithm = "argon2d4096"; Params = ""} #Argon2d-uis
+    [PSCustomObject]@{MainAlgorithm = "cpupower"; Params = ""} #CPUpower
+    [PSCustomObject]@{MainAlgorithm = "m7m"; Params = ""} #m7m (fastest)
+    [PSCustomObject]@{MainAlgorithm = "yescrypt"; Params = ""} #Yescrypt
+    [PSCustomObject]@{MainAlgorithm = "yescryptr16"; Params = ""} #YescryptR16
+    [PSCustomObject]@{MainAlgorithm = "yescryptr32"; Params = ""} #YescryptR32
+    [PSCustomObject]@{MainAlgorithm = "yescryptr8"; Params = ""} #YescryptR8
+    #[PSCustomObject]@{MainAlgorithm = "yespower"; Params = ""} #Yespower (CpuminerRplant faster)
+    #[PSCustomObject]@{MainAlgorithm = "yespowerlitb"; Params = ""} #YespowerLITB
+    #[PSCustomObject]@{MainAlgorithm = "yespowerltncg"; Params = ""} #YespowerLTNCG
+    #[PSCustomObject]@{MainAlgorithm = "yespowerr16"; Params = ""} #YespowerR16-ynt (CpuminerRplant faster)
+    #[PSCustomObject]@{MainAlgorithm = "yespowerurx"; Params = ""} #YespowerURX
 )
 
 $Name = Get-Item $MyInvocation.MyCommand.Path | Select-Object -ExpandProperty BaseName
@@ -68,10 +79,10 @@ $Session.DevicesByTypes.CPU | Select-Object Vendor, Model -Unique | ForEach-Obje
 					API            = "Ccminer"
 					Port           = $Miner_Port
 					Uri            = $Uri
-					FaultTolerance = $_.FaultTolerance
+                    FaultTolerance = $_.FaultTolerance
 					ExtendInterval = if ($_.ExtendInterval -ne $null) {$_.ExtendInterval} else {2}
                     Penalty        = 0
-                    DevFee         = $DevFee
+					DevFee         = $DevFee
 					ManualUri      = $ManualUri
                     Version        = $Version
                     PowerDraw      = 0

@@ -33,6 +33,7 @@
 132	CcminerHoney
 133	CcminerBmw512
 134	CcminerMtpNh
+135	CcminerSpModRfv2
 
 200	ClaymoreCryptonightAmd
 201	ClaymoreEquihashAmd
@@ -90,6 +91,7 @@
 346	TTminer3
 347	Gminer155
 348	NinjaRig
+349	SrbMinerMulti
 
 400	Sgminer
 401	SgminerBitcore
@@ -120,7 +122,7 @@
 530	CpuminerYespower
 531	CpuminerBinarium
 532	CpuminerRplant
-533	
+533	NanominerRh
 534	Nanominer
 535	CpuminerVerus
 536	Nheqminer
@@ -129,6 +131,8 @@
 539	CpuPower
 540	XmrigUpx
 541	Xlarig
+542	CpuminerRKZ
+543	CpuminerPower2b
 
 
 4068    CcminerSpModTribus

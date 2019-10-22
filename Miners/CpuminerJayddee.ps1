@@ -8,16 +8,16 @@ param(
 if (-not $IsWindows -and -not $IsLinux) {return}
 
 if ($IsLinux) {
-    $Path = ".\Bin\CPU-JayDDee\cpuminer-$($f=$Global:GlobalCPUInfo.Features;$(if($f.avx2 -and $f.sha -and $f.aes){'zen'}elseif($f.avx2 -and $f.aes){'avx2'}elseif($f.avx -and $f.aes){'aes-avx'}elseif($f.sse42 -and $f.aes){'aes-sse42'}elseif($f.sse42){'sse42'}else{'sse2'}))"
-    $Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v3.9.7-jayddee/cpuminer-opt-3.9.7-linux.7z"
+    $Path = ".\Bin\CPU-JayDDee\cpuminer-$($f=$Global:GlobalCPUInfo.Features;$(if($f.avx2 -and $f.sha -and $f.aes){'zen'}elseif($f.avx2 -and $f.aes){'avx2'}elseif($f.sse42 -and $f.aes){'aes-sse42'}elseif($f.sse42){'sse42'}else{'sse2'}))"
+    $Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v3.9.9-jayddee/cpuminer-opt-3.9.9-linux.7z"
 } else {
     $Path = ".\Bin\CPU-JayDDee\cpuminer-$($f=$Global:GlobalCPUInfo.Features;$(if($f.avx2 -and $f.sha -and $f.aes){'zen'}elseif($f.avx2 -and $f.aes){'avx2'}elseif($f.avx -and $f.aes){'avx'}elseif($f.sse42 -and $f.aes){'aes-sse42'}else{'sse2'})).exe"
-    $Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v3.9.7-jayddee/cpuminer-opt-3.9.7-windows.zip"
+    $Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v3.9.9-jayddee/cpuminer-opt-3.9.9-windows.zip"
 }
 $ManualUri = "https://github.com/JayDDee/cpuminer-opt/releases"
 $Port = "500{0:d2}"
 $DevFee = 0.0
-$Version = "3.9.7"
+$Version = "3.9.9"
 
 if (-not $Session.DevicesByTypes.CPU -and -not $InfoOnly) {return} # No CPU present in system
 
@@ -25,13 +25,13 @@ $Commands = [PSCustomObject[]]@(
     [PSCustomObject]@{MainAlgorithm = "allium"; Params = ""} #Garlicoin
     [PSCustomObject]@{MainAlgorithm = "anime"; Params = ""} #Anime
     [PSCustomObject]@{MainAlgorithm = "argon2"; Params = ""} #Argon2
-    [PSCustomObject]@{MainAlgorithm = "argon2d-crds"; Params = ""} #Argon2Credits
-    [PSCustomObject]@{MainAlgorithm = "argon2d-dyn"; Params = ""} #Argon2Dynamic
-    [PSCustomObject]@{MainAlgorithm = "argon2d-uis"; Params = ""} #Argon2Unitus
+    #[PSCustomObject]@{MainAlgorithm = "argon2d-crds"; Params = ""} #Argon2Credits
+    #[PSCustomObject]@{MainAlgorithm = "argon2d-dyn"; Params = ""} #Argon2Dynamic
+    #[PSCustomObject]@{MainAlgorithm = "argon2d-uis"; Params = ""} #Argon2Unitus
     #[PSCustomObject]@{MainAlgorithm = "axiom"; Params = ""} #axiom
     [PSCustomObject]@{MainAlgorithm = "bastion"; Params = ""} #bastion
     [PSCustomObject]@{MainAlgorithm = "bmw"; Params = ""} #bmw
-    [PSCustomObject]@{MainAlgorithm = "bmw512"; Params = ""} #bmw512
+    #[PSCustomObject]@{MainAlgorithm = "bmw512"; Params = ""} #bmw512
     #[PSCustomObject]@{MainAlgorithm = "cpupower"; Params = "-N 2048 -R 32 -K `"CPUpower: The number of CPU working or available for proof-of-work mining`""; Algorithm = "yespower"} #CpuPower
     #[PSCustomObject]@{MainAlgorithm = "cryptonightv7"; Params = ""} #CryptoNightV7
     [PSCustomObject]@{MainAlgorithm = "deep"; Params = ""} #deep
@@ -43,10 +43,11 @@ $Commands = [PSCustomObject[]]@(
     [PSCustomObject]@{MainAlgorithm = "jha"; Params = ""} #JHA
     [PSCustomObject]@{MainAlgorithm = "lyra2rev3"; Params = ""} #Lyra2v3
     #[PSCustomObject]@{MainAlgorithm = "lyra2z330"; Params = ""} #lyra2z330, CpuminerRplant faster
-    [PSCustomObject]@{MainAlgorithm = "m7m"; Params = ""} #m7m
+    #[PSCustomObject]@{MainAlgorithm = "m7m"; Params = ""} #m7m, (CpuminerRKZ faster)
     [PSCustomObject]@{MainAlgorithm = "pentablake"; Params = ""} #pentablake
     [PSCustomObject]@{MainAlgorithm = "phi2"; Params = ""} #PHI2
     [PSCustomObject]@{MainAlgorithm = "pluck"; Params = ""} #pluck
+    [PSCustomObject]@{MainAlgorithm = "power2b"; Params = ""} #power2b
     [PSCustomObject]@{MainAlgorithm = "scrypt:1048576"; Params = ""} #Verium
     [PSCustomObject]@{MainAlgorithm = "scrypt:2048"; Params = ""} #ScryptN
     [PSCustomObject]@{MainAlgorithm = "scrypt:8192"; Params = ""} #Scrypt8k
@@ -56,12 +57,13 @@ $Commands = [PSCustomObject[]]@(
     [PSCustomObject]@{MainAlgorithm = "shavite3"; Params = ""} #shavite3
     [PSCustomObject]@{MainAlgorithm = "skein2"; Params = ""} #skein2
     [PSCustomObject]@{MainAlgorithm = "sonoa"; Params = ""} #Sonoa
-    [PSCustomObject]@{MainAlgorithm = "x16rt-veil"; Params = ""} #x16rt-veil
     [PSCustomObject]@{MainAlgorithm = "veltor"; Params = ""} #Veltor
     [PSCustomObject]@{MainAlgorithm = "x12"; Params = ""} #x12
     [PSCustomObject]@{MainAlgorithm = "x15"; Params = ""} #x15
-    [PSCustomObject]@{MainAlgorithm = "x13bcd"; Params = ""} #bcd
-    [PSCustomObject]@{MainAlgorithm = "x16rt"; Params = ""} #x16rt
+    #[PSCustomObject]@{MainAlgorithm = "x13bcd"; Params = ""} #bcd
+    #[PSCustomObject]@{MainAlgorithm = "x16rt"; Params = ""; ExtendInterval = 3; FaultTolerance = 0.7; HashrateDuration = "Day"} #x16rt
+    #[PSCustomObject]@{MainAlgorithm = "x16rt-veil"; Params = ""; ExtendInterval = 3; FaultTolerance = 0.7; HashrateDuration = "Day"} #x16rt-veil
+    [PSCustomObject]@{MainAlgorithm = "x16rv2"; Params = ""; ExtendInterval = 3; FaultTolerance = 0.7; HashrateDuration = "Day"} #x16rv2
     [PSCustomObject]@{MainAlgorithm = "x21s"; Params = ""} #x21s
     [PSCustomObject]@{MainAlgorithm = "yescrypt"; Params = ""} #Yescrypt
     #[PSCustomObject]@{MainAlgorithm = "yescryptr16"; Params = ""} #yescryptr16, CpuminerOptBF faster
@@ -149,20 +151,24 @@ $Session.DevicesByTypes.CPU | Select-Object Vendor, Model -Unique | ForEach-Obje
 		foreach($Algorithm_Norm in @($Algorithm_Norm,"$($Algorithm_Norm)-$($Miner_Model)")) {
 			if ($Pools.$Algorithm_Norm.Host -and $Miner_Device -and ($Algorithm_Norm -ne "Lyra2z330" -or $Pools.$Algorithm_Norm.Name -ne "Zpool")) {
 				[PSCustomObject]@{
-					Name = $Miner_Name
-					DeviceName = $Miner_Device.Name
-					DeviceModel = $Miner_Model
-					Path = $Path
-					Arguments = "-b $($Miner_Port) -a $(if ($_.Algorithm) {$_.Algorithm} else {$_.MainAlgorithm}) -o $($Pools.$Algorithm_Norm.Protocol)://$($Pools.$Algorithm_Norm.Host):$($Pools.$Algorithm_Norm.Port) -u $($Pools.$Algorithm_Norm.User)$(if ($Pools.$Algorithm_Norm.Pass) {" -p $($Pools.$Algorithm_Norm.Pass)"}) $($DeviceParams) $($_.Params)"
-					HashRates = [PSCustomObject]@{$Algorithm_Norm = $Session.Stats."$($Miner_Name)_$($Algorithm_Norm -replace '\-.*$')_HashRate".Week}
-					API = "Ccminer"
-					Port = $Miner_Port
-					Uri = $Uri
-					FaultTolerance = $_.FaultTolerance
+					Name           = $Miner_Name
+					DeviceName     = $Miner_Device.Name
+					DeviceModel    = $Miner_Model
+					Path           = $Path
+					Arguments      = "-b $($Miner_Port) -a $(if ($_.Algorithm) {$_.Algorithm} else {$_.MainAlgorithm}) -o $($Pools.$Algorithm_Norm.Protocol)://$($Pools.$Algorithm_Norm.Host):$($Pools.$Algorithm_Norm.Port) -u $($Pools.$Algorithm_Norm.User)$(if ($Pools.$Algorithm_Norm.Pass) {" -p $($Pools.$Algorithm_Norm.Pass)"}) $($DeviceParams) $($_.Params)"
+					HashRates      = [PSCustomObject]@{$Algorithm_Norm = $Session.Stats."$($Miner_Name)_$($Algorithm_Norm -replace '\-.*$')_HashRate".Week}
+					API            = "Ccminer"
+					Port           = $Miner_Port
+					Uri            = $Uri
+                    FaultTolerance = $_.FaultTolerance
 					ExtendInterval = if ($_.ExtendInterval -ne $null) {$_.ExtendInterval} else {2}
-					DevFee = $DevFee
-					ManualUri = $ManualUri
-                    Version   = $Version
+                    Penalty        = 0
+					DevFee         = $DevFee
+					ManualUri      = $ManualUri
+                    Version        = $Version
+                    PowerDraw      = 0
+                    BaseName       = $Name
+                    BaseAlgorithm  = @($Algorithm_Norm -replace '\-.*')
 				}
 			}
 		}

@@ -10,17 +10,17 @@ if (-not $IsWindows -and -not $IsLinux) {return}
 $ManualUri = "https://bitcointalk.org/index.php?topic=4767892.0"
 $Port = "330{0:d2}"
 $DevFee = 2.0
-$Version = "1.5p"
+$Version = "1.5r"
 
 if ($IsLinux) {
     $Path = ".\Bin\Equihash-MiniZ\miniZ"
     $UriCuda = @(
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v1.5q6-miniz/miniZ_v1.5q6_cuda10_linux-x64.tar.gz"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v1.5r-miniz/miniZ_v1.5r_cuda10_linux-x64.tar.gz"
             Cuda = "10.0"
         },
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v1.5q6-miniz/miniZ_v1.5q6_linux-x64.tar.gz"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v1.5r-miniz/miniZ_v1.5r_linux-x64.tar.gz"
             Cuda = "8.0"
         }
     )
@@ -28,11 +28,11 @@ if ($IsLinux) {
     $Path = ".\Bin\Equihash-MiniZ\miniZ.exe"
     $UriCuda = @(
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v1.5q6-miniz/miniZ_v1.5q6_cuda10_win-x64.zip"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v1.5r-miniz/miniZ_v1.5r_cuda10_win-x64.zip"
             Cuda = "10.0"
         },
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v1.5q6-miniz/miniZ_v1.5q6_win-x64.zip"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v1.5r-miniz/miniZ_v1.5r_win-x64.zip"
             Cuda = "8.0"
         }
     )
@@ -43,7 +43,7 @@ if (-not $Session.DevicesByTypes.NVIDIA -and -not $InfoOnly) {return} # No NVIDI
 $Commands = [PSCustomObject[]]@(
     [PSCustomObject]@{MainAlgorithm = "Equihash16x5";    MinMemGB = 1;                  Params = "--par=96,5";  ExtendInterval = 2; AutoPers = $true}  #Equihash 96,5
     [PSCustomObject]@{MainAlgorithm = "Equihash24x5";    MinMemGB = 2;                  Params = "--par=144,5"; ExtendInterval = 2; AutoPers = $true} #Equihash 144,5
-    [PSCustomObject]@{MainAlgorithm = "Equihash24x7";    MinMemGB = 2;                  Params = "--par=192,7"; ExtendInterval = 2; AutoPers = $true} #Equihash 192,7
+    #[PSCustomObject]@{MainAlgorithm = "Equihash24x7";    MinMemGB = 2;                  Params = "--par=192,7"; ExtendInterval = 2; AutoPers = $true} #Equihash 192,7
     [PSCustomObject]@{MainAlgorithm = "EquihashR25x4";   MinMemGB = 3;                  Params = "--par=125,4"; ExtendInterval = 3; AutoPers = $true} #Equihash 125,4,0 (ZelCash)
     [PSCustomObject]@{MainAlgorithm = "EquihashR25x5";   MinMemGB = 3; MinMemGbW10 = 4; Params = "--par=150,5"; ExtendInterval = 3; AutoPers = $true} #Equihash 150,5,0 (GRIMM)
     [PSCustomObject]@{MainAlgorithm = "EquihashR25x5x3"; MinMemGB = 3; MinMemGbW10 = 4; Params = "--par=beam";  ExtendInterval = 3; AutoPers = $false} #Equihash 150,5,3 (BEAM)
@@ -95,19 +95,24 @@ $Session.DevicesByTypes.NVIDIA | Select-Object Vendor, Model -Unique | ForEach-O
                 $PersCoin = Get-EquihashCoinPers $Pools.$Algorithm_Norm.CoinSymbol -Default "auto"
 				$Pool_Port = if ($Pools.$Algorithm_Norm.Ports -ne $null -and $Pools.$Algorithm_Norm.Ports.GPU) {$Pools.$Algorithm_Norm.Ports.GPU} else {$Pools.$Algorithm_Norm.Port}
 				[PSCustomObject]@{
-					Name = $Miner_Name
-					DeviceName = $Miner_Device.Name
-					DeviceModel = $Miner_Model
-					Path = $Path
-					Arguments = "--telemetry $($Miner_Port) -cd $($DeviceIDsAll) --server $(if ($Pools.$Algorithm_Norm.SSL) {"ssl://"})$($Pools.$Algorithm_Norm.Host) --port $($Pool_Port) --user $($Pools.$Algorithm_Norm.User)$(if ($Pools.$Algorithm_Norm.Pass) {" --pass $($Pools.$Algorithm_Norm.Pass)"})$(if ($PersCoin -and ($_.AutoPers -or $PersCoin -ne "auto")) {" --pers $($PersCoin)"}) --gpu-line --nonvml --extra --latency$(if (-not $Session.Config.ShowMinerWindow) {" --nocolor"})$(if ($Pools.$Algorithm_Norm.Name -eq "MiningRigRentals" -and $PersCoin -ne "auto") {" --smart-pers"}) $($_.Params)"
-					HashRates = [PSCustomObject]@{$Algorithm_Norm = $($Session.Stats."$($Miner_Name)_$($Algorithm_Norm -replace '\-.*$')_HashRate".Week)}
-					API = "MiniZ"
-					Port = $Miner_Port
-					DevFee = $DevFee
-					Uri = $Uri
+					Name           = $Miner_Name
+					DeviceName     = $Miner_Device.Name
+					DeviceModel    = $Miner_Model
+					Path           = $Path
+					Arguments      = "--telemetry $($Miner_Port) -cd $($DeviceIDsAll) --server $(if ($Pools.$Algorithm_Norm.SSL) {"ssl://"})$($Pools.$Algorithm_Norm.Host) --port $($Pool_Port) --user $($Pools.$Algorithm_Norm.User)$(if ($Pools.$Algorithm_Norm.Pass) {" --pass $($Pools.$Algorithm_Norm.Pass)"})$(if ($PersCoin -and ($_.AutoPers -or $PersCoin -ne "auto")) {" --pers $($PersCoin)"}) --gpu-line --nonvml --extra --latency$(if (-not $Session.Config.ShowMinerWindow) {" --nocolor"})$(if ($Pools.$Algorithm_Norm.Name -eq "MiningRigRentals" -and $PersCoin -ne "auto") {" --smart-pers"}) $($_.Params)"
+					HashRates      = [PSCustomObject]@{$Algorithm_Norm = $($Session.Stats."$($Miner_Name)_$($Algorithm_Norm -replace '\-.*$')_HashRate".Week)}
+					API            = "MiniZ"
+					Port           = $Miner_Port
+                    FaultTolerance = $_.FaultTolerance
 					ExtendInterval = $_.ExtendInterval
-					ManualUri = $ManualUri
-                    Version     = $Version
+                    Penalty        = 0
+					DevFee         = $DevFee
+					Uri            = $Uri
+					ManualUri      = $ManualUri
+                    Version        = $Version
+                    PowerDraw      = 0
+                    BaseName       = $Name
+                    BaseAlgorithm  = @($Algorithm_Norm -replace '\-.*')
 				}
 			}
 		}

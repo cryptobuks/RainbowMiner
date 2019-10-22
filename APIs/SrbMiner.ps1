@@ -3,24 +3,26 @@
 class SrbMiner : Miner {
 
     [String]GetArguments() {
+        if ($this.Arguments -notlike "{*}") {return $this.Arguments}
+
         $Parameters = $this.Arguments | ConvertFrom-Json
 
         #Write config files. Keep separate files and do not overwrite to preserve optional manual customization
         $Threads = $Parameters.Config.gpu_conf.threads | Select-Object -Unique
-        $ConfigFile = "config_$($this.Name)-$($this.BaseAlgorithm -join '-')-$($this.DeviceModel)$(if ($Threads -gt 1) {"-$($Threads)"}).txt"
+        $ConfigFile = "config_$($this.Name)-$($this.BaseAlgorithm -join '-')-$($this.DeviceModel)$(if ($Threads -and $Threads -gt 1) {"-$($Threads)"}).txt"
         if (-not (Test-Path "$(Split-Path $this.Path)\$ConfigFile")) {
-            $Parameters.Config | ConvertTo-Json -Depth 10 | Set-Content "$(Split-Path $this.Path)\$ConfigFile" -ErrorAction Ignore -Encoding UTF8
+            $Parameters.Config | ConvertTo-Json -Depth 10 | Set-Content "$(Join-Path (Split-Path $this.Path) $ConfigFile)" -ErrorAction Ignore -Encoding UTF8
         }
 
         #Write pool file. Keep separate files
         $PoolFile = "pools_$($this.Pool)-$($this.BaseAlgorithm -join '-').txt"
-        $Parameters.Pools | ConvertTo-Json -Depth 10 | Set-Content "$(Split-Path $this.Path)\$PoolFile" -Force -ErrorAction Ignore -Encoding UTF8
+        $Parameters.Pools | ConvertTo-Json -Depth 10 | Set-Content "$(Join-Path (Split-Path $this.Path) $PoolFile)" -Force -ErrorAction Ignore -Encoding UTF8
 
-        return "--config $ConfigFile --pools $PoolFile $($Parameters.Params)".Trim()
+        return "$(if ($Parameters.CPar) {$Parameters.CPar} else {"--config"}) $ConfigFile $(if ($Parameters.PPar) {$Parameters.PPar} else {"--pools"}) $PoolFile $($Parameters.Params)".Trim()
     }
 
-    [String[]]UpdateMinerData () {
-        if ($this.GetStatus() -ne [MinerStatus]::Running) {return @()}
+    [Void]UpdateMinerData () {
+        if ($this.GetStatus() -ne [MinerStatus]::Running) {return}
 
         $Server = "localhost"
         $Timeout = 10 #seconds
@@ -38,7 +40,7 @@ class SrbMiner : Miner {
         }
         catch {
             Write-Log -Level Info "Failed to connect to miner ($($this.Name)). "
-            return @($Request, $Response)
+            return
         }
         $Global:ProgressPreference = $oldProgressPreference
 
@@ -61,7 +63,5 @@ class SrbMiner : Miner {
         })
 
         $this.CleanupMinerData()
-
-        return @($Request, $Data | ConvertTo-Json -Compress)
     }
 }

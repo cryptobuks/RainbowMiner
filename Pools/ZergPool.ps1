@@ -33,7 +33,6 @@ if (($Pool_Request | Get-Member -MemberType NoteProperty -ErrorAction Ignore | M
 
 try {
     $PoolCoins_Request = Invoke-RestMethodAsync "http://api.zergpool.com:8080/api/currencies" -delay 1000 -tag $Name -cycletime 120
-    $Pool_Time         = Get-UnixTimestamp
 }
 catch {
     if ($Error.Count){$Error.RemoveAt(0)}
@@ -75,9 +74,9 @@ $Pool_Request | Get-Member -MemberType NoteProperty -ErrorAction Ignore | Select
     $Pool_BLK = ($PoolCoins_Request.PSObject.Properties.Value | Where-Object algo -eq $Pool_Algorithm | Measure-Object "24h_blocks_shared" -Maximum).Maximum
 
     if (-not $InfoOnly) {
-        $NewStat = $false; if (-not (Test-Path "Stats\Pools\$($Name)_$($Pool_Algorithm_Norm)_Profit.txt")) {$NewStat = $true; $DataWindow = "estimate_last24h"}
+        $NewStat = $false; if (-not (Test-Path "Stats\Pools\$($Name)_$($Pool_Algorithm_Norm)_Profit.txt")) {$NewStat = $true; $DataWindow = "actual_last24h_shared"}
         $Pool_Price = Get-YiiMPValue $Pool_Request.$_ -DataWindow $DataWindow -Factor $Pool_Factor
-        $Stat = Set-Stat -Name "$($Name)_$($Pool_Algorithm_Norm)_Profit" -Value $Pool_Price -Duration $(if ($NewStat) {New-TimeSpan -Days 1} else {$StatSpan}) -ChangeDetection $(-not $NewStat) -Actual24h $($Pool_Request.$_.actual_last24h/1000) -Estimate24h $($Pool_Request.$_.estimate_last24h) -HashRate $Pool_Request.$_.hashrate_shared -BlockRate $Pool_BLK -Quiet
+        $Stat = Set-Stat -Name "$($Name)_$($Pool_Algorithm_Norm)_Profit" -Value $Pool_Price -Duration $(if ($NewStat) {New-TimeSpan -Days 1} else {$StatSpan}) -ChangeDetection $(-not $NewStat) -Actual24h $($Pool_Request.$_.actual_last24h_shared/1000) -Estimate24h $($Pool_Request.$_.estimate_last24h) -HashRate $Pool_Request.$_.hashrate_shared -BlockRate $Pool_BLK -Quiet
     }
 
     foreach($Pool_Region in $Pool_RegionsTable.Keys) {
@@ -107,6 +106,13 @@ $Pool_Request | Get-Member -MemberType NoteProperty -ErrorAction Ignore | Select
                     BLK           = $Stat.BlockRate_Average
                     TSL           = $Pool_TSL
 					ErrorRatio    = $Stat.ErrorRatio
+                    AlgorithmList = if ($Pool_Algorithm_Norm -match "-") {@($Pool_Algorithm_Norm, ($Pool_Algorithm_Norm -replace '\-.*$'))}else{@($Pool_Algorithm_Norm)}
+                    Name          = $Name
+                    Penalty       = 0
+                    PenaltyFactor = 1
+                    Wallet        = $Wallets.$Pool_Currency
+                    Worker        = "{workername:$Worker}"
+                    Email         = $Email
                 }
             }
         }

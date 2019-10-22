@@ -81,12 +81,17 @@ $Session.DevicesByTypes.NVIDIA | Select-Object Vendor, Model -Unique | ForEach-O
 					API            = "Ccminer"
 					Port           = $Miner_Port
 					URI            = $Uri
-					FaultTolerance = $_.FaultTolerance
+                    FaultTolerance = $_.FaultTolerance
 					ExtendInterval = $_.ExtendInterval
+                    Penalty        = 0
+                    DevFee         = $DevFee
 					ManualUri      = $ManualUri
 					MiningPriority = 2
 					MaxRejectedShareRatio = if ($_.MaxRejectedShareRatio) {$_.MaxRejectedShareRatio} else {0.5}
                     Version        = $Version
+                    PowerDraw      = 0
+                    BaseName       = $Name
+                    BaseAlgorithm  = @($Algorithm_Norm -replace '\-.*')
 				}
 			}
 		}

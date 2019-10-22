@@ -36,17 +36,17 @@ catch {
 $Pool_Coin = "Ravencoin"
 $Pool_Currency = "RVN"
 $Pool_Host = "ravenminer.com"
+$Pool_Algorithm = "X16rv2"
+$Pool_Port = 3737
 
 [hashtable]$Pool_RegionsTable = @{}
 
 @("us","eu","asia") | Foreach-Object {$Pool_RegionsTable.$_ = Get-Region $_}
 
-$Pool_Request | Get-Member -MemberType NoteProperty -ErrorAction Ignore | Select-Object -ExpandProperty Name | Where-Object {$Pool_Request.$_.actual_last24h -gt 0 -or $InfoOnly -or $AllowZero} | ForEach-Object {
-    $Pool_Algorithm = $Pool_Request.$_.name
+$Pool_Request | Get-Member -MemberType NoteProperty -ErrorAction Ignore | Select-Object -ExpandProperty Name | Where-Object {$_ -eq "x16rv2"} | Where-Object {$Pool_Request.$_.actual_last24h -gt 0 -or $InfoOnly -or $AllowZero} | ForEach-Object {
     $Pool_Algorithm_Norm = Get-Algorithm $Pool_Algorithm
     $Pool_PoolFee = [Double]$Pool_Request.$_.fees
     $Pool_User = $Wallets.$Pool_Currency
-    $Pool_Port = $Pool_Request.$_.port
 
     $Pool_Factor = $Pool_Request.$_.mbtc_mh_factor
 
@@ -54,7 +54,7 @@ $Pool_Request | Get-Member -MemberType NoteProperty -ErrorAction Ignore | Select
     $Pool_BLK = $PoolCoins_Request.$Pool_Currency."24h_blocks"
 
     if (-not $InfoOnly) {
-        $NewStat = $false; if (-not (Test-Path "Stats\Pools\$($Name)_$($Pool_Algorithm_Norm)_Profit.txt")) {$NewStat = $true; $DataWindow = "estimate_last24h"}
+        $NewStat = $false; if (-not (Test-Path "Stats\Pools\$($Name)_$($Pool_Algorithm_Norm)_Profit.txt")) {$NewStat = $true; $DataWindow = "actual_last24h"}
         $Pool_Price = Get-YiiMPValue $Pool_Request.$_ -DataWindow $DataWindow -Factor $Pool_Factor
         $Stat = Set-Stat -Name "$($Name)_$($Pool_Algorithm_Norm)_Profit" -Value $Pool_Price -Duration $(if ($NewStat) {New-TimeSpan -Days 1} else {$StatSpan}) -ChangeDetection $false -Actual24h $($Pool_Request.$_.actual_last24h/1000) -Estimate24h $($Pool_Request.$_.estimate_last24h) -HashRate $Pool_Request.$_.hashrate -BlockRate $Pool_BLK -Quiet
     }
@@ -86,6 +86,13 @@ $Pool_Request | Get-Member -MemberType NoteProperty -ErrorAction Ignore | Select
                 BLK           = $Stat.BlockRate_Average
                 TSL           = $Pool_TSL
 				ErrorRatio    = $Stat.ErrorRatio
+                AlgorithmList = if ($Pool_Algorithm_Norm -match "-") {@($Pool_Algorithm_Norm, ($Pool_Algorithm_Norm -replace '\-.*$'))}else{@($Pool_Algorithm_Norm)}
+                Name          = $Name
+                Penalty       = 0
+                PenaltyFactor = 1
+                Wallet        = $Wallets.$Pool_Currency
+                Worker        = "{workername:$Worker}"
+                Email         = $Email
             }
         }
     }

@@ -26,7 +26,6 @@ $Pools_Data = @(
     [PSCustomObject]@{symbol = "ETH";  port = 9999;           fee = 1; divisor = 1e6; useemail = $false; usepid = $false}
     [PSCustomObject]@{symbol = "ZEC";  port = @(6666,6633);   fee = 1; divisor = 1;   useemail = $false; usepid = $false}
     [PSCustomObject]@{symbol = "XMR";  port = @(14444,14433); fee = 1; divisor = 1;   useemail = $false; usepid = $true}
-    [PSCustomObject]@{symbol = "ETN";  port = @(13333,13433); fee = 2; divisor = 1;   useemail = $false; usepid = $false}
     [PSCustomObject]@{symbol = "RVN";  port = 12222;          fee = 1; divisor = 1e6; useemail = $false; usepid = $false}
     [PSCustomObject]@{symbol = "PASC"; port = 15556;          fee = 2; divisor = 1;   useemail = $true;  usepid = $true}
     [PSCustomObject]@{symbol = "GRIN"; port = 12111;          fee = 2; divisor = 1;   useemail = $false; walletsymbol = "GRIN29"}
@@ -89,9 +88,6 @@ $Pools_Data | Where-Object {$Wallets."$($_.symbol)" -or $InfoOnly} | ForEach-Obj
                     Port          = $Pool_Port
                     User          = "$($Pool_Wallet.wallet).{workername:$Worker}$(if ($_.useemail -and $Email) {"/$($Email)"})"
                     Pass          = "x"
-                    Wallet        = $Pool_Wallet.wallet
-                    Worker        = "{workername:$Worker}"
-                    Email         = $Email
                     Region        = $Pool_RegionsTable.$Pool_Region
                     SSL           = $Pool_SSL
                     Updated       = $Stat.Updated
@@ -100,6 +96,13 @@ $Pools_Data | Where-Object {$Wallets."$($_.symbol)" -or $InfoOnly} | ForEach-Obj
                     Workers       = $Pool_RequestWorkers.data
                     Hashrate      = $Stat.HashRate_Live
                     EthMode       = if ($Pool_Algorithm_Norm -match "^(Ethash|ProgPow)") {"ethproxy"} else {$null}
+                    AlgorithmList = if ($Pool_Algorithm_Norm -match "-") {@($Pool_Algorithm_Norm, ($Pool_Algorithm_Norm -replace '\-.*$'))}else{@($Pool_Algorithm_Norm)}
+                    Name          = $Name
+                    Penalty       = 0
+                    PenaltyFactor = 1
+                    Wallet        = $Pool_Wallet.wallet
+                    Worker        = "{workername:$Worker}"
+                    Email         = $Email
                 }
                 $Pool_SSL = $true
             }

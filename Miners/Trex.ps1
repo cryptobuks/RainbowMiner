@@ -16,15 +16,15 @@ if ($IsLinux) {
     $Path = ".\Bin\NVIDIA-Trex\t-rex"
     $UriCuda = @(
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v0.14.4-trex/t-rex-0.14.4-linux-cuda10.0.tar.gz"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v0.14.6-trex/t-rex-0.14.6-linux-cuda10.0.tar.gz"
             Cuda = "10.0"
         },
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v0.14.4-trex/t-rex-0.14.4-linux-cuda9.2.tar.gz"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v0.14.6-trex/t-rex-0.14.6-linux-cuda9.2.tar.gz"
             Cuda = "9.2"
         },
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v0.14.4-trex/t-rex-0.14.4-linux-cuda9.1.tar.gz"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v0.14.6-trex/t-rex-0.14.6-linux-cuda9.1.tar.gz"
             Cuda = "9.1"
         }
     )
@@ -32,15 +32,15 @@ if ($IsLinux) {
     $Path = ".\Bin\NVIDIA-Trex\t-rex.exe"
     $UriCuda = @(
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v0.14.4-trex/t-rex-0.14.4-win-cuda10.0.zip"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v0.14.6-trex/t-rex-0.14.6-win-cuda10.0.zip"
             Cuda = "10.0"
         },
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v0.14.4-trex/t-rex-0.14.4-win-cuda9.2.zip"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v0.14.6-trex/t-rex-0.14.6-win-cuda9.2.zip"
             Cuda = "9.2"
         },
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v0.14.4-trex/t-rex-0.14.4-win-cuda9.1.zip"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v0.14.6-trex/t-rex-0.14.6-win-cuda9.1.zip"
             Cuda = "9.1"
         }
     )
@@ -116,7 +116,7 @@ $Session.DevicesByTypes.NVIDIA | Select-Object Vendor, Model -Unique | ForEach-O
 
     $Commands | ForEach-Object {
         $MinMemGB     = [int]$_.MinMemGB
-        $Miner_Device = $Device | Where-Object {$_.OpenCL.GlobalMemsize -ge ($MinMemGB * 1gb - 0.25gb)}
+        $Miner_Device = $Device | Where-Object {$_.OpenCL.GlobalMemsize -ge ($MinMemGB * 1gb - 0.25gb) -and ($Cuda -match "^10" -or (Get-NvidiaArchitecture $_.Model) -ne "Turing")}
         $Miner_Port   = $Port -f ($Miner_Device | Select-Object -First 1 -ExpandProperty Index)
         $Miner_Name   = (@($Name) + @($Miner_Device.Name | Sort-Object) | Select-Object) -join '-'
         $Miner_Port   = Get-MinerPort -MinerName $Name -DeviceName @($Miner_Device.Name) -Port $Miner_Port
@@ -130,20 +130,24 @@ $Session.DevicesByTypes.NVIDIA | Select-Object Vendor, Model -Unique | ForEach-O
 			if ($Pools.$Algorithm_Norm.Host -and $Miner_Device -and ($Algorithm_Norm -ne "Tensority" -or (Compare-Object @($Miner_Device | Foreach-Object {Get-NvidiaArchitecture $_.Model} | Select-Object -Unique) @("Turing") | Measure-Object).Count -eq 0)) {
 				$Pool_Port = if ($Pools.$Algorithm_Norm.Ports -ne $null -and $Pools.$Algorithm_Norm.Ports.GPU) {$Pools.$Algorithm_Norm.Ports.GPU} else {$Pools.$Algorithm_Norm.Port}
 				[PSCustomObject]@{
-					Name = $Miner_Name
-					DeviceName = $Miner_Device.Name
-					DeviceModel = $Miner_Model
-					Path = $Path
-					Arguments = "-N 10 -r 5 -b 127.0.0.1:$($Miner_Port) -d $($DeviceIDsAll) -a $($Algorithm) -o $($Pools.$Algorithm_Norm.Protocol)://$($Pools.$Algorithm_Norm.Host):$($Pool_Port) -u $($Pools.$Algorithm_Norm.User)$(if ($Pools.$Algorithm_Norm.Pass) {" -p $($Pools.$Algorithm_Norm.Pass)"})$($Pools.$Algorithm_Norm.Failover | Select-Object | Foreach-Object {" -o $($_.Protocol)://$($_.Host):$($_.Port) -u $($_.User)$(if ($_.Pass) {" -p $($_.Pass)"})"})$(if (-not $Session.Config.ShowMinerWindow){" --no-color"}) --no-nvml --no-watchdog --gpu-report-interval 25 --quiet --api-bind-http 0 $($_.Params)"
-					HashRates = [PSCustomObject]@{$Algorithm_Norm = $Session.Stats."$($Miner_Name)_$($Algorithm_Norm -replace '\-.*$')_HashRate"."$(if ($_.HashrateDuration){$_.HashrateDuration}else{"Week"})"}
-					API = "Ccminer"
-					Port = $Miner_Port
-					Uri = $Uri
-					FaultTolerance = $_.FaultTolerance
+					Name           = $Miner_Name
+					DeviceName     = $Miner_Device.Name
+					DeviceModel    = $Miner_Model
+					Path           = $Path
+					Arguments      = "-N 10 -r 5 -b 127.0.0.1:$($Miner_Port) -d $($DeviceIDsAll) -a $($Algorithm) -o $($Pools.$Algorithm_Norm.Protocol)://$($Pools.$Algorithm_Norm.Host):$($Pool_Port) -u $($Pools.$Algorithm_Norm.User)$(if ($Pools.$Algorithm_Norm.Pass) {" -p $($Pools.$Algorithm_Norm.Pass)"})$($Pools.$Algorithm_Norm.Failover | Select-Object | Foreach-Object {" -o $($_.Protocol)://$($_.Host):$($_.Port) -u $($_.User)$(if ($_.Pass) {" -p $($_.Pass)"})"})$(if (-not $Session.Config.ShowMinerWindow){" --no-color"}) --no-nvml --no-watchdog --gpu-report-interval 25 --quiet --api-bind-http 0 $($_.Params)"
+					HashRates      = [PSCustomObject]@{$Algorithm_Norm = $Session.Stats."$($Miner_Name)_$($Algorithm_Norm -replace '\-.*$')_HashRate"."$(if ($_.HashrateDuration){$_.HashrateDuration}else{"Week"})"}
+					API            = "Ccminer"
+					Port           = $Miner_Port
+					Uri            = $Uri
+                    FaultTolerance = $_.FaultTolerance
 					ExtendInterval = $_.ExtendInterval
-					DevFee = if ($_.DevFee) {$_.DevFee} else {$DevFee}
-					ManualUri = $ManualUri
-                    Version = $Version
+                    Penalty        = 0
+					DevFee         = if ($_.DevFee) {$_.DevFee} else {$DevFee}
+					ManualUri      = $ManualUri
+                    Version        = $Version
+                    PowerDraw      = 0
+                    BaseName       = $Name
+                    BaseAlgorithm  = @($Algorithm_Norm -replace '\-.*')
 				}
 			}
 		}

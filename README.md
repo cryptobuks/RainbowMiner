@@ -21,7 +21,7 @@ Features: easy setup wizard with adhoc working default (no editing of files need
 
 - **Multi-Platform (AMD, NVIDIA, CPU) on Windows and Linux**
 - **Profit auto-switch between mining programs and [algorithm](https://rbminer.net/algorithms/) for GPUs & CPUs (optimized one for each vendor vs. one for each possible device combination)**
-- **Profit auto-switch between pools (2Miners, AHashPool, BaikalMiner, BlazePool, BlockCruncher, BlockMasters, Bsod, CryptoKnight, EthashPool, Ethermine, F2pool, FairPool, FlyPool, GosCx, GrinMint, HashRefinery, HashVault, HeroMiners, Icemining, LuckyPool, MinerMore, MinerRocks, MiningPoolHub, [MiningRigRentals](https://www.miningrigrentals.com?ref=2598069), Mintpond, Nanopool, Nicehash, PhiPhiPool, PocketWhale, Ravenminer, SparkPool, SuprNova, UUpool, YiiMP, Zergpool and Zpool)**
+- **Profit auto-switch between pools (2Miners, AHashPool, BaikalMiner, BlazePool, BlockCruncher, BlockMasters, Bsod, CryptoKnight, EthashPool, Ethermine, F2pool, FairPool, FlyPool, GosCx, GrinMint, Hashpool, HashVault, HeroMiners, Icemining, LuckyPool, MinerMore, MinerRocks, MiningPoolHub, [MiningRigRentals](https://www.miningrigrentals.com?ref=2598069), Mintpond, Nanopool, Nicehash, PhiPhiPool, PocketWhale, Ravenminer, SparkPool, SuprNova, UUpool, YiiMP, Zergpool and Zpool)**
 - **Profit calculation, including real cost of electricity per miner**
 - **Uses the top actual available miner programs (Bminer, Ccminer, Claymore, CryptoDredge, Dstm, EnemyZ, Ewbf, Gminer, NBminer, Sgminer, SrbMiner, T-Rex, Xmrig and many more)**
 - **Easy setup wizard with adhoc working default - click Start.bat and off you go (RainbowMiner will ask for your credentials, no hassle with editing configuration files)**
@@ -50,11 +50,16 @@ Features: easy setup wizard with adhoc working default (no editing of files need
 
 1. Install PowerShell 6: [Download Installer for version 6.2.1](https://github.com/PowerShell/PowerShell/releases/download/v6.2.1/PowerShell-6.2.1-win-x64.msi)
 2. Install Microsoft .NET Framework 4.5.1 or later: [Web Installer](https://www.microsoft.com/net/download/dotnet-framework-runtime)
-3. Update GPU drivers: [Nvidia 431.36](https://www.nvidia.com/Download/index.aspx) and [AMD Adrenalin 2019 Edition 19.5.2](https://support.amd.com/en-us/download/desktop?os=Windows+10+-+64)
+3. Update GPU drivers: [Nvidia 431.60](https://www.nvidia.com/Download/index.aspx) and [AMD Adrenalin 2019 Edition 19.5.2](https://support.amd.com/en-us/download/desktop?os=Windows+10+-+64)
 4. If your rig contains AMD graphic cards, RainbowMiner's overclocking features rely on MSI Afterburner, you should install and run it: [Download](http://download.msi.com/uti_exe//vga/MSIAfterburnerSetup.zip)
 5. If you plan on using [GrinGoldMiner](https://github.com/mozkomor/GrinGoldMiner): Install Microsoft [.NET Core 2.2 Runtime](https://dotnet.microsoft.com/download) - download and install "Run Apps .NET Core Runtime", click the button "** Download .NET Core Runtime (see here: https://github.com/RainbowMiner/RainbowMiner/issues/441#issuecomment-465932125) **"
 
 Finally: check, if Powershell 6 is in your PATH, because RainbowMiner will not run correctly, if the path to powershell is missing. Sometimes "C:\Program Files\PowerShell\6" has to be added manually to the PATH environement variable after installing Powershell 6. Here is a nice tutorial, how to add to PATH environment variable https://www.howtogeek.com/118594/how-to-edit-your-system-path-for-easy-command-line-access/amp/
+
+A note on Windows Nvidia drivers. Recommended lite-packed versions are available for direct download:
+[Windows 10 / Nvidia 431.68](http://us.download.nvidia.com/Windows/431.86/431.86-desktop-win10-64bit-international-nsd-whql.exe)
+[Windows 10 / Nvidia 431.68 DCH](http://us.download.nvidia.com/Windows/431.86/431.86-desktop-win10-64bit-international-nsd-dch-whql.exe)
+[Windows 7,8,8.1 / Nvidia 431.60](http://us.download.nvidia.com/Windows/431.60/431.60-desktop-win8-win7-64bit-international-whql.exe)
 
 ### Ubuntu 18.x Pre-requesites
 (This section is WIP! Want to help? Make an [issue](https://github.com/RainbowMiner/RainbowMiner/issues) or a [PR](https://github.com/RainbowMiner/RainbowMiner/pulls)))
@@ -212,7 +217,7 @@ Alternative: start as Linux `screen`:
 
 ### Done!
 
-<details><summary>Valid poolnames</summary>2miners, 2minersolo, ahashpool, ahashpoolcoins, blazepool, baikalminer, baikalminersolo, blockcruncher, blockmasters, blockmasterscoins, bsod, bsodparty, bsodsolo, cryptoknight, ethashpool, ethermine, f2pool, fairpool, flypool, goscx, goscxparty, goscxsolo, grinmint, hashrefinery, hashvault, herominers, icemining, luckypool, minermore, minerrocks, miningpoolhub, miningpoolhubcoins, mininigrigrentals, mintpond, nanopool, nicehash, nlpool, phiphipool, ravenminer, sparkpool, suprnova, uupool, yiimp, zergpool, zergpoolcoins, zergpoolparty, zergpoolsolo, zergpoolcoinsparty, zergpoolcoinssolo, zpool, zpoolcoins</details>
+<details><summary>Valid poolnames</summary>2miners, 2minersolo, ahashpool, ahashpoolcoins, blazepool, baikalminer, baikalminersolo, blockcruncher, blockmasters, blockmasterscoins, bsod, bsodparty, bsodsolo, cryptoknight, ethashpool, ethermine, f2pool, fairpool, flypool, goscx, goscxparty, goscxsolo, grinmint, hashpool, hashvault, herominers, icemining, luckypool, minermore, minerrocks, miningpoolhub, miningpoolhubcoins, mininigrigrentals, mintpond, nanopool, nicehash, nlpool, phiphipool, ravenminer, sparkpool, suprnova, uupool, yiimp, zergpool, zergpoolcoins, zergpoolparty, zergpoolsolo, zergpoolcoinsparty, zergpoolcoinssolo, zpool, zpoolcoins</details>
 <details><summary>Valid algorithms</summary> Balloon, Bitcore, Blakecoin, Blake2s, BlakeVanilla, C11, CryptoNightV8, CryptoNight-Swap, Cuckaroo29, Ethash, X11, Decred, Equihash, Equihash144, Equihash192, Equihash-BTG, Groestl, Hex, HMQ1725, HSR, JHA, Keccak, Lbry, Lyra2RE2, Lyra2z, MyriadGroestl, NeoScrypt, Pascal, Phi, Phi2, Polytimos, Quark, Qubit, Scrypt, SHA256, Sib, Skunk, Skein, Tensority, Timetravel, Tribus, Veltor, X11, X12, X11evo, X16R, X16S, X17, X18, X21s, X22i, Yescrypt and many more: https://rbminer.net/algorithms/</details>
 
 
@@ -359,7 +364,7 @@ All variables defined in "ExcludeServerConfig" will not be overwritten by the se
 <details><summary>GosCxParty</summary> https://gos.cx/ no auto-exchange, a seperate wallet address is needed for each coin, you want to mine solo together with others. Set in pools configuration or edit pools.config.txt. Set "PartyPassword" in pools.config.txt for your group</details>
 <details><summary>GosCxSolo</summary> https://gos.cx/ no auto-exchange, a seperate wallet address is needed for each coin, you want to mine solo. Set in pools configuration or edit pools.config.txt</details>
 <details><summary>Grinmint</summary> https://grinmint.com/ GRIN/Cuckaroo29-pool, pays in GRIN, set your GRIN-eMail-address as wallet and enter your Grinmint password in pools configuration or edit pools.config.txt</details>
-<details><summary>HashRefinery</summary> https://pool.hashrefinery.com auto-exchange and payout in BTC</details>
+<details><summary>Hashpool</summary> https://hashpool.eu/ no auto-exchange, a seperate wallet address is needed for each coin, you want to mine. Set in pools configuration or edit pools.config.txt</details>
 <details><summary>HashVault</summary> https://hashvault.pro/ no auto-exchange, dedicated to cryptonight mining, a seperate wallet address is needed for each coin, you want to mine. Set in pools configuration or edit pools.config.txt</details>
 <details><summary>HeroMiners</summary> https://herominers.com/ no auto-exchange, dedicated to cryptonight and swap mining, a seperate wallet address is needed for each coin, you want to mine. Set in pools configuration or edit pools.config.txt</details>
 <details><summary>Icemining</summary> https://icemining.ca/ no auto-exchange, very good BCD (BitcoinDiamond) performance, a seperate wallet address is needed for each coin you want to mine. Set in pools configuration or edit pools.config.txt</details>
@@ -398,7 +403,7 @@ All variables defined in "ExcludeServerConfig" will not be overwritten by the se
 
 If you plan to mine through Nicehash, I strongly recommend, that you register an account with them (https://www.nicehash.com/register). In this case, Nicehash will provide you with an extra NiceHash wallet/bitcoin address (RainbowMiner will ask for this address during the setup or configuration process).
 This lowers the minimum payout sum from 0.1BTC (for external wallet) to a very low 0.001BTC (for Nicehash wallet). An additional benefit for Coinbase users: sending BTC from the Nicehash wallet to your Coinbase account is free of charge.</details>
-<details><summary>Notes for the pools BlockCruncher, BlockMasters, Bsod, CryptoKnight, GosCx, HashRefinery, Icemining, MinerRocks, NLpool, PhiPhiPool, PocketWhale, Ravenminer, YiiMP and Zpool</summary>
+<details><summary>Notes for the pools BlockCruncher, BlockMasters, Bsod, CryptoKnight, GosCx, HashPool, Icemining, MinerRocks, NLpool, PhiPhiPool, PocketWhale, Ravenminer, YiiMP and Zpool</summary>
   
 The miner can be setup to mine any coin or currency, that is listed at the respective pool. The pool will then payout to the given non-BTC wallet address. Take into account, that non-BTC payouts depend heavily on that coin being mined. If the pool has not or is not mining that currency, the payouts will be delayed until the pool has mined the blocks. Read the pools websites, about the mineability and reliability of a currency. It's recommended to use BTC as any other coin could be removed at anytime and payouts will not occur. The pools Bsod, CryptoKnight, GosCx, Icemining, MinerRocks, PhiPhiPool, PocketWhale, Ravenminer and Yiimp do not have auto-exchange to BTC. Please be careful, what you choose to mine.
 </details>
@@ -757,6 +762,8 @@ For Server (Runmode=server) setup:
 - **PowerPriceCurrency** = currency of your PowerPrice [default=USD]
 - **UsePowerPrice** = set to (1), if electricity cost should be substracted from profits [default=0]
 - **CheckProfitability** = if no more miners are profitable and this is set to (1), RainbowMiner will idle, until profitability returns. UsePowerPrice needs to be (1) and a PowerPrice greater than zero must be set for this function to work. [default=0]
+- **EnableHeatMyFlat** =  set to a value 1..10 to prefer miners, that run hotter (0=disable, 5=good point to start). A "PowerPrice" must be set for this function to work. [default=0]
+
 
 #### Technical/Other ####
 - **Interval** = timing interval in seconds of RainbowMiner [default=60]
@@ -879,7 +886,7 @@ This would reduce the hashrate-results from the pool Ravenminer by 5%
 
 #### Change a pool's time frame (data window)
 
-To override the default data window "average2e" of the YiiMP based pools (AHashPool,BlazePool,BlockMasters,Hashrefinery,ZergPool,Zpool) the parameter "DataWindow" can be added to the pool's configuration record. 
+To override the default data window "average2e" of the YiiMP based pools (AHashPool,BlazePool,BlockMasters,Hashpool,ZergPool,Zpool) the parameter "DataWindow" can be added to the pool's configuration record. 
 Possible values are:
 - estimate_current (=default): the pool's current calculated profitability-estimation (more switching, relies on the honesty of the pool)
 - estimate_last24h: the pool's calculated profitability-estimation for the past 24 hours (less switching, relies on the honesty of the pool)

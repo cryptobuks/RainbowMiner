@@ -10,21 +10,25 @@ if (-not $IsWindows -and -not $IsLinux) {return}
 $ManualUri = "https://bitcointalk.org/index.php?topic=3378390.0"
 $Port = "302{0:d2}"
 $DevFee = 1.0
-$Version = "2.2"
+$Version = "2.3"
 
 if ($IsLinux) {
     $Path = ".\Bin\NVIDIA-enemyz\z-enemy"
     $UriCuda = @(
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v2.2-zenemy/z-enemy-2.2-cuda100.tar.gz"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v2.3-zenemy/z-enemy-2.3-linux-cuda101-libcurl4.tar.gz"
+            Cuda = "10.1"
+        },
+        [PSCustomObject]@{
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v2.3-zenemy/z-enemy-2.3-linux-cuda100-libcurl4.tar.gz"
             Cuda = "10.0"
         },
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v2.2-zenemy/z-enemy-2.2-cuda92.tar.gz"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v2.3-zenemy/z-enemy-2.3-linux-cuda92.tar.gz"
             Cuda = "9.2"
         },
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v2.2-zenemy/z-enemy-2.2-cuda91.tar.gz"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v2.3-zenemy/z-enemy-2.3-linux-cuda91.tar.gz"
             Cuda = "9.1"
         }
     )
@@ -32,15 +36,19 @@ if ($IsLinux) {
     $Path = ".\Bin\NVIDIA-enemyz\z-enemy.exe"
     $UriCuda = @(
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v2.2-zenemy/z-enemy-2.2-cuda10.1.zip"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v2.3-zenemy/z-enemy-2.3-win-cuda10.1.zip"
             Cuda = "10.1"
         },
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v2.2-zenemy/z-enemy-2.2-cuda9.2.zip"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v2.3-zenemy/z-enemy-2.3-win-cuda10.0.zip"
+            Cuda = "10.0"
+        },
+        [PSCustomObject]@{
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v2.3-zenemy/z-enemy-2.3-win-cuda9.2.zip"
             Cuda = "9.2"
         },
         [PSCustomObject]@{
-            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v2.2-zenemy/z-enemy-2.2-cuda9.1.zip"
+            Uri = "https://github.com/RainbowMiner/miner-binaries/releases/download/v2.3-zenemy/z-enemy-2.3-win-cuda9.1.zip"
             Cuda = "9.1"
         }
     )
@@ -111,20 +119,24 @@ $Session.DevicesByTypes.NVIDIA | Select-Object Vendor, Model -Unique | ForEach-O
 			if ($Pools.$Algorithm_Norm.Host -and $Miner_Device) {
 				$Pool_Port = if ($Pools.$Algorithm_Norm.Ports -ne $null -and $Pools.$Algorithm_Norm.Ports.GPU) {$Pools.$Algorithm_Norm.Ports.GPU} else {$Pools.$Algorithm_Norm.Port}
 				[PSCustomObject]@{
-					Name = $Miner_Name
-					DeviceName = $Miner_Device.Name
-					DeviceModel = $Miner_Model
-					Path = $Path
-					Arguments = "-R 1 --api-bind=0 --api-bind-http=$($Miner_Port) -d $($DeviceIDsAll) -a $($_.MainAlgorithm) -q -o $($Pools.$Algorithm_Norm.Protocol)://$($Pools.$Algorithm_Norm.Host):$($Pool_Port) -u $($Pools.$Algorithm_Norm.User)$(if ($Pools.$Algorithm_Norm.Pass) {" -p $($Pools.$Algorithm_Norm.Pass)"})$($Pools.$Algorithm_Norm.Failover | Select-Object | Foreach-Object {" -o $($_.Protocol)://$($_.Host):$($_.Port) -u $($_.User)$(if ($_.Pass) {" -p $($_.Pass)"})"}) --no-cert-verify $($_.Params)"
-					HashRates = [PSCustomObject]@{$Algorithm_Norm = $Session.Stats."$($Miner_Name)_$($Algorithm_Norm -replace '\-.*$')_HashRate"."$(if ($_.HashrateDuration){$_.HashrateDuration}else{"Week"})"}
-					API = "EnemyZ"
-					Port = $Miner_Port
-					Uri = $Uri
-					FaultTolerance = $_.FaultTolerance
+					Name           = $Miner_Name
+					DeviceName     = $Miner_Device.Name
+					DeviceModel    = $Miner_Model
+					Path           = $Path
+					Arguments      = "-R 1 --api-bind=0 --api-bind-http=$($Miner_Port) -d $($DeviceIDsAll) -a $($_.MainAlgorithm) -q -o $($Pools.$Algorithm_Norm.Protocol)://$($Pools.$Algorithm_Norm.Host):$($Pool_Port) -u $($Pools.$Algorithm_Norm.User)$(if ($Pools.$Algorithm_Norm.Pass) {" -p $($Pools.$Algorithm_Norm.Pass)"})$($Pools.$Algorithm_Norm.Failover | Select-Object | Foreach-Object {" -o $($_.Protocol)://$($_.Host):$($_.Port) -u $($_.User)$(if ($_.Pass) {" -p $($_.Pass)"})"}) --no-cert-verify $($_.Params)"
+					HashRates      = [PSCustomObject]@{$Algorithm_Norm = $Session.Stats."$($Miner_Name)_$($Algorithm_Norm -replace '\-.*$')_HashRate"."$(if ($_.HashrateDuration){$_.HashrateDuration}else{"Week"})"}
+					API            = "EnemyZ"
+					Port           = $Miner_Port
+					Uri            = $Uri
+                    FaultTolerance = $_.FaultTolerance
 					ExtendInterval = $_.ExtendInterval
-					DevFee = $DevFee
-					ManualUri = $ManualUri
-                    Version   = $Version
+                    Penalty        = 0
+					DevFee         = $DevFee
+					ManualUri      = $ManualUri
+                    Version        = $Version
+                    PowerDraw      = 0
+                    BaseName       = $Name
+                    BaseAlgorithm  = @($Algorithm_Norm -replace '\-.*')
 				}
 			}
 		}

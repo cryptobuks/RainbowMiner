@@ -596,6 +596,35 @@ try {
         Get-ChildItem "Stats\Pools" -Filter "*_Profit.txt" -File | Foreach-Object {Remove-Item $_.FullName -Force;$ChangesTotal++}
     }
 
+    if ($Version -le (Get-Version "4.4.3.1")) {
+        Get-ChildItem "Stats\Miners" -Filter "*x16rv2_HashRate.txt" -File | Foreach-Object {Remove-Item $_.FullName -Force;$ChangesTotal++}
+    }
+
+    if ($Version -le (Get-Version "4.4.3.5")) {
+        Get-ChildItem "Stats\Pools" -Filter "Zpool_BMW512_Profit.txt" -File | Foreach-Object {Remove-Item $_.FullName -Force;$ChangesTotal++}
+    }
+
+    if ($Version -le (Get-Version "4.4.3.9")) {
+        $AddAlgorithm += @("Yespower2b")
+    }
+
+    if ($Version -le (Get-Version "4.4.4.7")) {
+        $AddAlgorithm += @("Kangaroo12")
+    }
+
+    if ($Version -le (Get-Version "4.4.4.8")) {
+        $Changes = 0
+        $ConfigActual = Get-Content "$ConfigFile" -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+        if ($ConfigActual.ExcludeServerConfigVars -ne "`$ExcludeServerConfigVars" -and (Get-ConfigArray $ConfigActual.ExcludeServerConfigVars) -inotcontains "GroupName") {
+            $ConfigActual | Add-Member ExcludeServerConfigVars "$((@(Get-ConfigArray $ConfigActual.ExcludeServerConfigVars | Select-Object) + "GroupName") -join ',')" -Force
+            $Changes++;
+        }
+        if ($Changes) {
+            $ConfigActual | ConvertTo-Json | Set-Content $ConfigFile -Encoding UTF8
+            $ChangesTotal += $Changes
+        }
+    }
+
     if ($OverridePoolPenalties) {
         if (Test-Path "Data\PoolsConfigDefault.ps1") {
             $PoolsDefault = Get-ChildItemContent "Data\PoolsConfigDefault.ps1" -Quick

@@ -62,11 +62,9 @@ $Pool_Request.PSObject.Properties.Name | Where-Object {$Wallets."$($_ -replace "
             Port          = $Pool_Request1.port
             User          = "$($Wallets.$Pool_Currency)$(if ($Pool_Currency -match "GRIN") {"."} else {"."}){workername:$Worker}"
             Pass          = "x"
-            Wallet        = $Wallets.$Pool_Currency
-            Worker        = "{workername:$Worker}"
             Region        = $Pool_Region_Default
             SSL           = $false
-            Updated       = $Stat.Updated
+            Updated       = (Get-Date).ToUniversalTime()
             PoolFee       = $Pool_Request1.fee
             Workers       = $Pool_Request1.stats.workers_online
             Hashrate      = $Stat.HashRate_Live
@@ -74,6 +72,13 @@ $Pool_Request.PSObject.Properties.Name | Where-Object {$Wallets."$($_ -replace "
             BLK           = $Stat.BlockRate_Average
             WTM           = $true
             EthMode       = if ($Pool_Algorithm_Norm -match "^(Ethash|ProgPow)") {"ethproxy"} else {$null}
+            AlgorithmList = if ($Pool_Algorithm_Norm -match "-") {@($Pool_Algorithm_Norm, ($Pool_Algorithm_Norm -replace '\-.*$'))}else{@($Pool_Algorithm_Norm)}
+            Name          = $Name
+            Penalty       = 0
+            PenaltyFactor = 1
+            Wallet        = $Wallets.$Pool_Currency
+            Worker        = "{workername:$Worker}"
+            Email         = $Email
         }
     }
 }

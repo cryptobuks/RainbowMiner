@@ -73,7 +73,7 @@ $PoolCoins_Request | Get-Member -MemberType NoteProperty -ErrorAction Ignore | S
 
     if (-not $InfoOnly) {
         if ($Pool_Request -and $Pool_Request.$Pool_Key) {
-            $NewStat = $false; if (-not (Test-Path "Stats\Pools\$($Name)_$($Pool_CoinSymbol)_Profit.txt")) {$NewStat = $true; $DataWindow = "estimate_last24h"}
+            $NewStat = $false; if (-not (Test-Path "Stats\Pools\$($Name)_$($Pool_CoinSymbol)_Profit.txt")) {$NewStat = $true; $DataWindow = "actual_last24h"}
             $Pool_Price = Get-YiiMPValue $Pool_Request.$Pool_Key -DataWindow $DataWindow -Factor $Pool_Factor
             $Stat = Set-Stat -Name "$($Name)_$($Pool_CoinSymbol)_Profit" -Value $Pool_Price -Duration $(if ($NewStat) {New-TimeSpan -Days 1} else {$StatSpan}) -ChangeDetection $(-not $NewStat) -Actual24h $($Pool_Request.$_.actual_last24h/1000) -Estimate24h $($Pool_Request.$_.estimate_last24h) -HashRate $PoolCoins_Request.$Pool_CoinSymbol.hashrate_shared -BlockRate $Pool_BLK -Quiet
         } else {
@@ -119,6 +119,13 @@ $PoolCoins_Request | Get-Member -MemberType NoteProperty -ErrorAction Ignore | S
                         Pass          = "c=$Pool_Currency{diff:,d=`$difficulty}"
                     }
                 })
+                AlgorithmList = if ($Pool_Algorithm_Norm -match "-") {@($Pool_Algorithm_Norm, ($Pool_Algorithm_Norm -replace '\-.*$'))}else{@($Pool_Algorithm_Norm)}
+                Name          = $Name
+                Penalty       = 0
+                PenaltyFactor = 1
+                Wallet        = $Pool_User
+                Worker        = "{workername:$Worker}"
+                Email         = $Email
             }
         }
     }
